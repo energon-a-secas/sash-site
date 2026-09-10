@@ -1,0 +1,107 @@
+{
+  "circle": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A disc of radius 236 centred at 256,256, built as two half arcs that start and finish at the left extreme 20,256.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "crescent": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "The left half of a disc of radius 236, closed on its right by a shallower arc of radius 260 running between the same two endpoints at 256,20 and 256,492, so the two boundaries meet at a point top and foot and the enclosed band is thickest at the left.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "diamond": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A square stood on one corner: straight edges joining the four extremes of the field at 256,20 then 492,256 then 256,492 then 20,256.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "drop": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A teardrop with a single point at 256,20 and a circular base of radius 190 centred at 256,300. Two cubic curves fall from the point and turn outward to meet the circle tangentially at its widest span. Bilaterally symmetric about x 256.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "flame": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A tongue of fire: one point at 256,16, outer sides bowing to x 396 on the right and x 116 on the left, and a foot of two lobes ending at 286,470 and 226,470 with a notch that rises between them to 256,380. Bilaterally symmetric about x 256.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "gem": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A brilliant cut seen face on: a flat table 192 wide from 160,56 to 352,56, two shoulders opening to the widest span of 432 at y 200, and straight facets closing to a single point at 256,492.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "hexagon": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A regular six-sided figure with a vertex at the top and at the foot and flat sides left and right, circumradius 236 about 256,256. This is the fleet's own mark and C12 DO #7 makes it the default shape for a new badge.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "leaf": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A pointed oval: two mirrored cubic curves running from 256,20 to 256,492, each pulled sideways by control points at x 392 and x 120, so the figure comes to a point top and foot and is widest at the half height.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "ribbon-rosette": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A twelve-lobed scalloped disc of radius 176 centred at 256,212, each lobe an outward arc of radius 48.3, with two straight-edged tails falling from beneath it to a notched hem at y 500.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "rosette": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A sixteen-lobed scalloped disc: sixteen outward arcs of radius 48.8, their endpoints spaced evenly around a circle of radius 236 centred at 256,256, starting at the top.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "rounded-square": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A square inscribed in the field from 20,20 to 492,492, with a quarter-circle of radius 100 at each of the four corners.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "shield": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A heater shield: a shallow gable that climbs to 256,16 from shoulders at 40,84 and 472,84, straight sides falling to y 264, then two curves drawing inward to a rounded point at 256,496.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "star": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A five-pointed star with a point at the top: ten vertices every 36 degrees about 256,256, alternating between an outer radius of 236 and an inner radius of 100.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "wave": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A band 216 tall spanning x 28 to x 484, whose top edge at y 148 and bottom edge at y 364 are the same two-crest cubic curve, so the band keeps its width all the way across.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  },
+  "zigzag": {
+    "author": "Neorgon fleet, insignia kit (workstream F1)",
+    "createdAt": "2026-09-09",
+    "description": "A band of constant width that turns twice as it falls: a head 200 wide across the top from 160,20 to 360,20, a stroke down and left to 240,220, a step right to 390,220, a long stroke down and left to a single point at 200,492, and a return up the left side through 260,270 and 120,270 to the head. Replaced two earlier candidate names under C12.3.",
+    "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
+    "field": "512 by 512, a 20 unit margin, coordinates as written."
+  }
+}

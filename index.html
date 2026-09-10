@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Framed-page guard (CONTRACTS.md C15 A36, which replaced C5.3's buster).
+       GitHub Pages sets no response header and a meta CSP cannot carry
+       frame-ancestors, so framing cannot be prevented here. This marks the
+       document instead. It attempts no navigation, so nothing throws, and
+       css/frame.css plus js/frame.js put a notice in place of the page.
+       embed.html carries none of this: being framed is its whole purpose. -->
+  <script>if (window.top !== window.self) document.documentElement.dataset.framed = 'on';</script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://clerk.neorgon.com https://challenges.cloudflare.com https://gc.zgo.at https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.neorgon.org https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: https://*.convex.cloud https://cdn.neorgon.org https://img.clerk.com https://images.credly.com https://neorgon.goatcounter.com; connect-src 'self' https://*.convex.cloud https://clerk.neorgon.com https://accounts.neorgon.com https://clerk-telemetry.com https://api.clerk.com https://challenges.cloudflare.com https://neorgon.goatcounter.com https://cloudflareinsights.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com https://clerk.neorgon.com https://accounts.neorgon.com https://sash.neorgon.com https://enamel.neorgon.com; worker-src 'self' blob:">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
@@ -9,16 +17,20 @@
   <meta name="apple-mobile-web-app-title" content="Sash">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="neo-mark" content="on">
-  <title>Sash | Short Descriptor</title>
-  <meta name="description" content="Under 155 chars, no trailing period, active verbs">
-  <meta property="og:title" content="Sash: Short Descriptor">
-  <meta property="og:description" content="One punchy line, same tone as meta description">
+  <!-- The Convex deployment, read by js/convex.js. One tag per page, swapped in one
+       place at release. CONTRACTS.md C8.2. -->
+  <meta name="neo-convex-url" content="https://cool-puma-781.convex.cloud">
+  <meta name="clerk-publishable-key" content="pk_live_Y2xlcmsubmVvcmdvbi5jb20k">
+  <title>Sash | Your badge wallet</title>
+  <meta name="description" content="Collect badges and certificates on one profile, pin the ones you want seen, and share the wall as an image or an embed">
+  <meta property="og:title" content="Sash: Your badge wallet">
+  <meta property="og:description" content="Every badge you have earned on one page, in the order you choose">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://sash.neorgon.com/">
   <meta property="og:site_name" content="Neorgon">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sash: Short Descriptor">
-  <meta name="twitter:description" content="One punchy line">
+  <meta name="twitter:title" content="Sash: Your badge wallet">
+  <meta name="twitter:description" content="Every badge you have earned on one page, in the order you choose">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://sash.neorgon.com/">
   <meta property="og:locale" content="en_US">
@@ -31,22 +43,18 @@
   <!-- Fleet design tokens: canonical, do not redeclare locally (PROJECTS.md section 5) -->
   <link rel="stylesheet" href="https://cdn.neorgon.org/v1.0.0/styles/base.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/frame.css">
+  <link rel="stylesheet" href="css/neorgon-insignia.css">
   <!-- Neorgon Header Kit (vendored; ?header=live swaps CSS to CDN). Keep after style.css, the kit owns the header. -->
   <script>(function(){var m=location.search.match(/[?&]theme=([\w-]+)/)||document.cookie.match(/(?:^|;\s*)neo_theme=([\w-]+)/);if(m&&m[1]!=='default')document.documentElement.dataset.theme=decodeURIComponent(m[1]);})();</script>
   <link rel="stylesheet" href="css/neorgon-header.css">
   <link rel="stylesheet" href="css/neorgon-themes.css">
   <link rel="stylesheet" href="https://cdn.neorgon.org/v1.0.0/header/season.css">
   <script defer src="js/neorgon-header.js"></script>
-  <!-- Neorgon Footer Kit (vendored). Pins the footer to the viewport floor on short
-       pages and builds the meta bar + back-to-top. See packages/neorgon-ui/footer/README.md.
-       Optional stamps: <meta name="neo-repo"|"neo-version"|"neo-updated"> -->
+  <!-- Neorgon Footer Kit (vendored). -->
   <link rel="stylesheet" href="css/neorgon-footer.css">
   <script defer src="js/neorgon-footer.js"></script>
-  <!-- Neorgon Beacon Kit (vendored). Bottom-left correction reporter: it
-       carries page context to balise.neorgon.com in a URL fragment and the
-       visitor writes there. No form on this page and no request from it.
-       Opt out per page with <meta name="beacon" content="off">.
-       See packages/neorgon-ui/beacon/README.md. -->
+  <!-- Neorgon Beacon Kit (vendored). Bottom-left correction reporter. -->
   <meta name="beacon-site" content="sash-site">
   <link rel="stylesheet" href="css/neorgon-beacon.css">
   <script defer src="js/neorgon-beacon.js"></script>
@@ -55,7 +63,7 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Sash",
-    "description": "DESCRIPTION",
+    "description": "A wallet for community badges and certificates: claim them from a link, pin the ones you want seen, and share the wall as an image or an embed.",
     "url": "https://sash.neorgon.com/",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Any",
@@ -64,47 +72,35 @@
   }
   </script>
 </head>
-<body>
+<body data-page="wallet">
 
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- Neorgon Header Kit contract (packages/neorgon-ui/header/README.md).
-       data-header-mode: hub (glass) | content (sticky gradient) | app (slim, auto-hides on scroll).
-       Pick content for learning/content sites, app for tool-dense sites. -->
   <header class="header-bar" data-header-mode="content">
     <div class="header-logo">
-      <!-- PATTERN: one link: mark + name go to THIS site's home (root or #home)
-           so clicking either resets the view. The planet icon in .header-right
-           is the only header link to neorgon.com. -->
       <a href="./" class="header-title-link">
         <img src="https://cdn.neorgon.org/v1.0.0/energon-classic-logo.png" class="header-logo-img" alt="">
         <div class="header-title-wrap">
-          <h1>Project Name</h1>
-          <div class="header-subtitle">One-line description</div>
+          <h1>Sash</h1>
+          <div class="header-subtitle">Your badge wallet</div>
         </div>
       </a>
     </div>
 
-    <!-- .header-right owns margin-left:auto; home icon is always last. -->
     <div class="header-right">
-      <!-- Action buttons (omit .header-actions entirely if the site has none).
-           Mark the 1–2 primary controls with data-keep-mobile, everything else
-           collapses into the ⋯ overflow menu at ≤700px (handled by neorgon-header.js).
       <div class="header-actions">
-        <button class="btn btn--ghost btn--sm" id="someFeatureBtn" data-keep-mobile>Feature</button>
-        <button class="btn btn--ghost btn--sm" id="secondaryBtn">Secondary</button>
+        <a class="btn btn--ghost btn--sm" href="send.html" data-keep-mobile>Send</a>
+        <a class="btn btn--ghost btn--sm" href="import.html">Import</a>
+        <a class="btn btn--ghost btn--sm" href="https://enamel.neorgon.com/">Make a badge</a>
       </div>
-      -->
 
-      <!-- Auth toggle (Pattern B/C sites): lives in .header-right, keeps data-keep-mobile.
-      <button class="auth-toggle" id="authToggle" aria-label="Account" data-keep-mobile>
+      <button class="auth-toggle" id="authToggle" aria-label="Account" aria-expanded="false" aria-controls="authPanel" data-keep-mobile>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
           <circle cx="12" cy="10" r="3"/>
           <path d="M6 19c1.2-3 3.5-4 6-4s4.8 1 6 4"/>
         </svg>
       </button>
-      -->
 
       <a class="header-home" href="https://neorgon.com/" title="neorgon.com" aria-label="Neorgon home">
         <svg class="nh-hub-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -120,122 +116,193 @@
     </div>
   </header>
 
-  <!-- Auth panel (uncomment when using Pattern B or C, add auth event handlers to js/events.js) -->
-  <!--
+  <!-- Auth sheet: Clerk mounts the user button here when signed in; signed out the
+       header button opens Clerk's own dialog (signInMode: modal). -->
   <div class="auth-panel" id="authPanel">
     <div class="auth-panel-inner">
       <div id="authGate">
-        <div class="auth-tabs">
-          <button class="auth-tab active" data-tab="login">Log In</button>
-          <button class="auth-tab" data-tab="register">Register</button>
-        </div>
-        <div class="auth-form" id="authLoginForm">
-          <input type="text" id="authLoginUser" placeholder="Username" autocomplete="username" maxlength="20">
-          <input type="password" id="authLoginPass" placeholder="Password" autocomplete="current-password">
-          <button class="auth-submit" id="authLoginBtn">Log In</button>
-        </div>
-        <div class="auth-form" id="authRegisterForm" hidden>
-          <input type="text" id="authRegUser" placeholder="Choose a username" autocomplete="username" maxlength="20">
-          <input type="password" id="authRegPass" placeholder="Choose a password" autocomplete="new-password">
-          <button class="auth-submit" id="authRegBtn">Register</button>
-        </div>
+        <p class="sash-hint">Sign in to see your wallet. Your Neorgon account works on every site.</p>
+        <button type="button" class="auth-submit" id="authSigninBtn">Sign in</button>
+        <div id="neorgon-signin-mount" class="neorgon-clerk-mount"></div>
       </div>
       <div id="authUser" hidden>
         <span class="auth-username" id="authUsername"></span>
-        <button class="auth-logout" id="authLogout">Log out</button>
+        <div id="neorgon-user-mount" class="neorgon-clerk-mount"></div>
       </div>
+      <p class="auth-error" id="authError" hidden></p>
     </div>
   </div>
   <div class="auth-divider"></div>
-  -->
 
-  <!-- Main content: replace with your app's HTML structure -->
-  <!-- Two layouts ship here. `.container` is the centred single column, right
-       for reading-first pages. `.shell` is the side-rail layout, right for a
-       tool with sections you switch between: it moves the nav into the left
-       gutter on desktop and collapses to a scrollable row below 940px.
-
-         <div class="shell">
-           <nav class="shell__rail" aria-label="Section">…</nav>
-           <div class="shell__main stack stack--loose">…</div>
-         </div>
-  -->
   <main id="main">
     <div class="container stack">
-      <section class="section" aria-labelledby="template-overview-title">
-        <div class="section__header">
-          <div class="section__titles">
-            <h2 class="section__title" id="template-overview-title">Template UI kit</h2>
-            <p class="section__lead">
-              Sections use <code>.section</code> + <code>.stack</code> for rhythm.
-              Cards are calm by default; add <code>.card--interactive</code> only for hover lift.
-              Blocking overlays use <code>.modal</code>; the auth strip is a <strong>sheet</strong> (no backdrop), not a modal.
-            </p>
-          </div>
-          <div class="toolbar">
-            <button type="button" class="btn btn--secondary btn--sm" id="openDemoModal">Open modal</button>
-            <a class="btn btn--ghost btn--sm" href="https://neorgon.com/" target="_blank" rel="noopener noreferrer">Ghost link</a>
-          </div>
-        </div>
 
-        <div class="stack stack--tight">
-          <div class="card">
-            <p class="section__lead" style="margin:0;">
-              Default card: subtle border/shadow on hover, no floaty lift. Use for dense forms and content.
-            </p>
-          </div>
-          <div class="card card--interactive">
-            <p class="section__lead" style="margin:0;">
-              Interactive card: reserved for primary surfaces you want to feel tactile (hero picks, featured modules).
-            </p>
-          </div>
-        </div>
+      <!-- ── loading ─────────────────────────────────────────── -->
+      <section class="section" id="bootState">
+        <p class="sash-hint">Loading your wallet.</p>
       </section>
 
-      <section class="section" aria-labelledby="template-buttons-title">
+      <!-- ── signed out ──────────────────────────────────────── -->
+      <section class="section" id="signedOut" hidden aria-labelledby="signedOutTitle">
         <div class="section__titles">
-          <h2 class="section__title" id="template-buttons-title">Buttons</h2>
-          <p class="section__lead">Canonical classes: <code>.btn</code> + <code>.btn--primary</code>, <code>.btn--secondary</code>, <code>.btn--ghost</code>, <code>.btn--danger</code>, plus optional <code>.btn--sm</code>, <code>.btn--block</code>, or <code>.btn--icon</code>.</p>
+          <h2 class="section__title" id="signedOutTitle">A wallet for the badges you actually earned here</h2>
+          <p class="section__lead">
+            Sash keeps community badges and certificates on one page. Claim them from a link,
+            hide the ones you would rather not show, and put the rest in the order you want.
+            Every badge carries the handle that issued it and a link back to this site, so a
+            reader can always see where it came from.
+          </p>
         </div>
         <div class="toolbar">
-          <button type="button" class="btn btn--primary">Primary</button>
-          <button type="button" class="btn btn--secondary">Secondary</button>
-          <button type="button" class="btn btn--ghost">Ghost</button>
-          <button type="button" class="btn btn--danger">Danger</button>
-          <button type="button" class="btn btn--primary btn--sm">Small primary</button>
-          <button type="button" class="btn btn--ghost btn--icon" aria-label="Settings">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          </button>
+          <button type="button" class="btn btn--primary" id="heroSigninBtn">Sign in to start</button>
+          <a class="btn btn--ghost" href="policy.html">What these badges are</a>
+        </div>
+
+        <div class="card sash-lookup">
+          <h3 class="sash-card-title">Look up a profile</h3>
+          <form class="sash-form-row" id="lookupForm">
+            <label class="sr-only" for="lookupHandle">Handle</label>
+            <input type="text" id="lookupHandle" class="sash-input" placeholder="handle" maxlength="30" autocomplete="off" spellcheck="false">
+            <button type="submit" class="btn btn--secondary">View profile</button>
+          </form>
+          <p class="sash-hint">A public profile needs no account to read.</p>
         </div>
       </section>
+
+      <!-- ── signed in, no handle yet ────────────────────────── -->
+      <section class="section" id="needHandle" hidden aria-labelledby="needHandleTitle">
+        <div class="section__titles">
+          <h2 class="section__title" id="needHandleTitle">Pick your handle</h2>
+          <p class="section__lead">
+            Your handle is your profile address and it is printed on every badge you issue.
+            It is set once and cannot be changed later, so pick the one you want to keep.
+            Two to thirty characters, lowercase letters, digits and hyphens.
+          </p>
+        </div>
+        <form class="sash-form-row" id="handleForm">
+          <label class="sr-only" for="handleInput">Handle</label>
+          <span class="sash-prefix">sash.neorgon.com/u.html?h=</span>
+          <input type="text" id="handleInput" class="sash-input" placeholder="your-handle" maxlength="30" autocomplete="off" spellcheck="false" required>
+          <button type="submit" class="btn btn--primary" id="handleSubmit">Claim it</button>
+        </form>
+        <p class="sash-error" id="handleError" hidden></p>
+      </section>
+
+      <!-- ── the wallet ──────────────────────────────────────── -->
+      <div id="walletMain" class="stack stack--loose" hidden>
+
+        <section class="section" aria-labelledby="youTitle">
+          <div class="sash-profile">
+            <div class="sash-avatar" id="meAvatar"></div>
+            <div class="sash-profile-text">
+              <h2 class="section__title" id="youTitle"><span id="meName">Your profile</span></h2>
+              <p class="sash-handle" id="meHandle"></p>
+              <p class="sash-headline" id="meHeadline"></p>
+              <ul class="sash-counts" id="meCounts"></ul>
+            </div>
+            <div class="sash-profile-actions">
+              <a class="btn btn--secondary btn--sm" id="viewPublic" href="u.html">View public profile</a>
+              <button type="button" class="btn btn--ghost btn--sm" id="editToggle" aria-expanded="false" aria-controls="profileForm">Edit profile</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="profileForm" hidden aria-labelledby="profileFormTitle">
+          <div class="section__titles">
+            <h2 class="section__title" id="profileFormTitle">Profile</h2>
+            <p class="section__lead">What a visitor to your public page reads before the badges.</p>
+          </div>
+          <form class="sash-form" id="meForm">
+            <label class="sash-field">
+              <span class="sash-label">Display name <span class="sash-count" data-count-for="fDisplayName"></span></span>
+              <input type="text" id="fDisplayName" class="sash-input" maxlength="60" autocomplete="name">
+            </label>
+            <label class="sash-field">
+              <span class="sash-label">Headline <span class="sash-count" data-count-for="fHeadline"></span></span>
+              <input type="text" id="fHeadline" class="sash-input" maxlength="120">
+            </label>
+            <label class="sash-field">
+              <span class="sash-label">Bio <span class="sash-count" data-count-for="fBio"></span></span>
+              <textarea id="fBio" class="sash-input sash-textarea" maxlength="600" rows="4"></textarea>
+            </label>
+            <label class="sash-field sash-field--narrow">
+              <span class="sash-label">Who can see this profile</span>
+              <select id="fVisibility" class="sash-input">
+                <option value="public">Public, anyone can read it</option>
+                <option value="unlisted">Unlisted, reachable by link only</option>
+                <option value="private">Private, only you</option>
+              </select>
+            </label>
+
+            <div class="sash-field">
+              <span class="sash-label">Character</span>
+              <div class="sash-avatar-row">
+                <div class="sash-avatar sash-avatar--lg" id="formAvatar"></div>
+                <div class="toolbar">
+                  <button type="button" class="btn btn--secondary btn--sm" id="avatarFromCookie">Use my Neorgon character</button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="avatarShuffle">Shuffle</button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="avatarClear">Remove</button>
+                </div>
+              </div>
+              <p class="sash-hint" id="avatarHint"></p>
+            </div>
+
+            <div class="toolbar">
+              <button type="submit" class="btn btn--primary" id="profileSave">Save profile</button>
+              <span class="sash-hint" id="profileSaved" hidden>Saved.</span>
+            </div>
+            <p class="sash-error" id="profileError" hidden></p>
+          </form>
+        </section>
+
+        <section class="section" id="showcaseSection" aria-labelledby="showcaseTitle">
+          <div class="section__header">
+            <div class="section__titles">
+              <h2 class="section__title" id="showcaseTitle">Showcase</h2>
+              <p class="section__lead">
+                The badges you want seen first, in the order you set. Up to 24.
+              </p>
+            </div>
+          </div>
+          <div id="showcaseList"></div>
+        </section>
+
+        <section class="section" aria-labelledby="awardsTitle">
+          <div class="section__header">
+            <div class="section__titles">
+              <h2 class="section__title" id="awardsTitle">Everything you hold</h2>
+              <p class="section__lead" id="awardsLead"></p>
+            </div>
+            <div class="toolbar">
+              <button type="button" class="btn btn--secondary btn--sm" id="exportBtn">Download PNG</button>
+            </div>
+          </div>
+
+          <div class="sash-toolbar">
+            <div class="sash-chips" role="group" aria-label="Filter by group">
+              <button type="button" class="sash-chip is-on" data-group="all" aria-pressed="true">All</button>
+              <button type="button" class="sash-chip" data-group="neorgon" aria-pressed="false">Neorgon</button>
+              <button type="button" class="sash-chip" data-group="community" aria-pressed="false">Community</button>
+              <button type="button" class="sash-chip" data-group="recognition" aria-pressed="false">Recognition</button>
+              <button type="button" class="sash-chip" data-group="imported" aria-pressed="false">Imported</button>
+            </div>
+            <label class="sash-switch">
+              <input type="checkbox" id="showHidden">
+              <span>Show hidden</span>
+            </label>
+          </div>
+
+          <div id="awardSections"></div>
+        </section>
+      </div>
+
+      <p class="sash-error" id="pageError" hidden></p>
     </div>
   </main>
 
-  <!-- Modal: blocking overlay (confirmations, legal). Sheets = e.g. .auth-panel under header. -->
-  <div class="modal" id="demoModal" hidden>
-    <div class="modal__backdrop" data-modal-close tabindex="-1" aria-hidden="true"></div>
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="demoModalTitle" tabindex="-1">
-      <header class="modal__header">
-        <h2 id="demoModalTitle">Example modal</h2>
-        <button type="button" class="btn btn--ghost btn--icon" data-modal-close aria-label="Close dialog">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </header>
-      <div class="modal__body">
-        Use modals for blocking tasks. Sheets (collapsible rows under the header) keep context visible, see commented <code>.auth-panel</code> in <code>index.html</code>.
-      </div>
-      <footer class="modal__footer">
-        <button type="button" class="btn btn--ghost" data-modal-close>Cancel</button>
-        <button type="button" class="btn btn--primary" data-modal-close>Done</button>
-      </footer>
-    </div>
-  </div>
-
-  <!-- Neorgon Footer Kit contract. data-footer-mode: minimal (default) | content | app.
-       Replace the copy with a real note (privacy, data provenance, disclaimer) or drop
-       the text entirely, the kit appends "Part of Neorgon" and any version stamps. -->
   <footer class="neo-footer" data-footer-mode="minimal">
-    Runs entirely in your browser.
+    Sash badges are community badges. They are not a professional qualification and nobody accredits them.
+    <a href="policy.html">Read the policy</a>.
   </footer>
 
   <script type="module" src="js/app.js"></script>

@@ -3,33 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Framed-page guard (CONTRACTS.md C15 A36, which replaced C5.3's buster).
+       GitHub Pages sets no response header and a meta CSP cannot carry
+       frame-ancestors, so framing cannot be prevented here. This marks the
+       document instead. It attempts no navigation, so nothing throws, and
+       css/frame.css plus js/frame.js put a notice in place of the page.
+       embed.html carries none of this: being framed is its whole purpose. -->
+  <script>if (window.top !== window.self) document.documentElement.dataset.framed = 'on';</script>
+
+  <!-- C13.3 Content-Security-Policy, the same string every other page carries.
+       The only script this page loads is the framed-page notice, and it carries
+       the whole policy anyway: a 404 is served for any address on the site,
+       including one somebody crafted, so it is the page least worth making an
+       exception for. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://clerk.neorgon.com https://challenges.cloudflare.com https://gc.zgo.at https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.neorgon.org https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: https://*.convex.cloud https://cdn.neorgon.org https://img.clerk.com https://images.credly.com https://neorgon.goatcounter.com; connect-src 'self' https://*.convex.cloud https://clerk.neorgon.com https://accounts.neorgon.com https://clerk-telemetry.com https://api.clerk.com https://challenges.cloudflare.com https://neorgon.goatcounter.com https://cloudflareinsights.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com https://clerk.neorgon.com https://accounts.neorgon.com https://sash.neorgon.com https://enamel.neorgon.com; worker-src 'self' blob:">
+
+  <meta name="neo-convex-url" content="https://cool-puma-781.convex.cloud">
+  <meta name="clerk-publishable-key" content="pk_live_Y2xlcmsubmVvcmdvbi5jb20k">
+
+  <!-- Every path below is root-absolute on purpose. GitHub Pages serves this
+       file for an address at any depth, so `favicon.svg` would resolve against
+       whatever folder the visitor guessed at and 404 a second time. -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="Sash">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="neo-mark" content="on">
-  <title>Not found | Sash</title>
+
+  <title>Sash | Page not found</title>
+  <meta name="description" content="That Sash address does not resolve. Head back to the wallet or look the credential up by its public id">
+  <meta property="og:title" content="Sash: page not found">
+  <meta property="og:description" content="That address does not resolve">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sash.neorgon.com/404.html">
+  <meta property="og:site_name" content="Neorgon">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sash: page not found">
+  <meta name="twitter:description" content="That address does not resolve">
   <meta name="robots" content="noindex">
+  <meta property="og:locale" content="en_US">
+  <meta name="theme-color" content="#040714">
+  <meta property="og:image" content="https://sash.neorgon.com/og-preview.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Sash">
+  <meta name="twitter:image" content="https://sash.neorgon.com/og-preview.jpg">
+
   <link rel="stylesheet" href="https://cdn.neorgon.org/v1.0.0/styles/base.css">
+  <!-- Root-absolute like every path above, and the framed-page notice is the
+       one thing this page draws that is not in the block below. -->
+  <link rel="stylesheet" href="/css/frame.css">
   <style>
     /* Self-contained on purpose. A 404 that depends on the site's own CSS
        bundle breaks exactly when something is already wrong with the paths. */
+    /* The site accent, which frame.css reads. base.css defines it and this is
+       the only page that does not link the stylesheet that overrides it. */
+    :root { --accent: #7c3aed; }
     body {
       margin: 0; min-height: 100dvh; display: grid; place-items: center;
-      background: #0a0a12; color: #f4f4f8; text-align: center;
+      background: #040714; color: #f9f9f9; text-align: center;
       font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
-      padding: 2rem;
+      padding: 2rem; line-height: 1.55;
     }
     .code { font-size: clamp(4rem, 18vw, 9rem); font-weight: 800; line-height: 1;
-            margin: 0; color: #E326E4; letter-spacing: -.04em; }
+            margin: 0; color: #7c3aed; letter-spacing: -.04em; }
     h1 { font-size: clamp(1.1rem, 4vw, 1.5rem); font-weight: 600; margin: .75rem 0 .35rem; }
-    p  { color: rgba(255,255,255,.62); margin: 0 0 1.75rem; max-width: 34ch; }
-    a  { display: inline-block; padding: .7rem 1.4rem; border-radius: 8px;
-         background: #E326E4; color: #fff; text-decoration: none; font-weight: 600; }
-    a:hover { filter: brightness(1.1); }
-    a + a { margin-left: .6rem; background: transparent; color: rgba(255,255,255,.72);
-            border: 1px solid rgba(255,255,255,.18); }
+    p  { color: rgba(255,255,255,.62); margin: 0 auto 1.25rem; max-width: 46ch; }
+    .row { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+    a  { display: inline-block; padding: .7rem 1.4rem; border-radius: 10px;
+         background: #7c3aed; color: #fff; text-decoration: none; font-weight: 600; }
+    a:hover { filter: brightness(1.12); }
+    a.quiet { background: transparent; color: rgba(255,255,255,.72);
+              border: 1px solid rgba(255,255,255,.18); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   </style>
 </head>
 <body>
@@ -37,8 +85,18 @@
     <p class="code">404</p>
     <h1>That page is not here</h1>
     <p>The link may be old, or the address may have a typo in it.</p>
-    <a href="/">Back to Sash</a>
-    <a href="https://neorgon.com">All tools</a>
+    <p>
+      Sash addresses carry their subject in a query, not in the path: a credential is
+      <code>/badge.html?id=&lt;public id&gt;</code> and a claim link is
+      <code>/claim.html?t=&lt;token&gt;</code>. A path that looks like one of those
+      lands here.
+    </p>
+    <div class="row">
+      <a href="/">Back to Sash</a>
+      <a class="quiet" href="/badge.html">Look up a credential</a>
+      <a class="quiet" href="https://neorgon.com">All tools</a>
+    </div>
   </main>
+  <script type="module" src="/js/frame.js"></script>
 </body>
 </html>

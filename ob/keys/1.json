@@ -1,0 +1,8 @@
+{
+  "kty": "RSA",
+  "n": "omfUwcMWJAJGh_zk0MMLc-cqY6FKsmHOi72KJ448WKkGD1znM1dmkp7ZSFONBxaSYzstDQrCje30qkzYD59ZJ7Xeq-x3x6NHX8nY6C1wX6_DuGUpmKcNUvnlEE4bJond8LGvUUz_WR2I5LSTBM3AQN66KJstAd3oFx6E1eHU-RtbX7M31LCjCtUUbXG-Hs8dShjynHzyP4_VWa4adYPHsezalTl5LQU20OtZcPwVU6y98AGbj0rKhxx0pBFiYqlf5Ip_rUW1eHMRLVjUQpOIm6HJ9fKeHiHFolQr3MhF2eiyCfkJCyeyp6T4j4vlBgLYfBBtPVNMLF-L0fzkvfqTxQ",
+  "e": "AQAB",
+  "alg": "RS256",
+  "use": "sig",
+  "kid": "https://sash.neorgon.com/ob/keys/1.json"
+}

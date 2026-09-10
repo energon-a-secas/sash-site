@@ -1,0 +1,193 @@
+/* ══════════════════════════════════════════════════════════════
+   Insignia Kit
+   Canonical source: packages/neorgon-ui/insignia/insignia.css
+   Vendored per site as <site>/css/neorgon-insignia.css by sync-insignia.sh.
+   Never edit the vendored copy: fix this file and re-run the script.
+
+   Tokens come from the CDN base.css every site already links. Nothing here
+   declares a colour, a radius, a space or a font token of its own, and the only
+   local identity knob a site sets is --accent. The one kit-owned variable is
+   --ins-card-size, which the grid sets per call so one stylesheet serves the
+   180px wallet, the 140px embed and the 96px picker.
+   ══════════════════════════════════════════════════════════════ */
+
+.ins-wall {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.ins-wall-title {
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.ins-grid {
+  --ins-card-size: 180px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ins-card-size), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.ins-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+
+.ins-card--import {
+  background: var(--surface-2);
+  border-style: dashed;
+}
+
+.ins-card--muted { opacity: 0.62; }
+
+/* A42.1: the placeholder for a row the renderer refused. Dashed and accented so
+   it reads as something missing rather than as a style of badge, and at full
+   opacity, because a card that says it could not be displayed is the one thing
+   on the wall that must not be easy to miss. */
+.ins-card--broken {
+  background: var(--surface-2);
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.ins-card--broken .ins-card-art {
+  background: var(--surface-1);
+}
+
+.ins-card-art {
+  display: grid;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-decoration: none;
+  place-items: center;
+}
+
+.ins-card-art svg,
+.ins-card-provider-art {
+  width: 100%;
+  height: auto;
+  max-width: var(--ins-card-size);
+  display: block;
+}
+
+.ins-card-noart {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ins-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.ins-card-name {
+  font-size: var(--text-base);
+  line-height: 1.25;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.ins-card-meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.ins-card-issuer {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ins-card-count {
+  flex: none;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--text-xs);
+}
+
+.ins-card-dates {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.ins-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.ins-tag {
+  font-size: var(--text-xs);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+.ins-tag--warn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* The link only moves; a card that is not a link must not pretend to be one. */
+a.ins-card-art:hover svg,
+a.ins-card-art:hover .ins-card-provider-art {
+  transform: translateY(-2px);
+}
+
+a.ins-card-art svg,
+a.ins-card-art .ins-card-provider-art {
+  transition: transform var(--dur-fast) ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.ins-card-art svg,
+  a.ins-card-art .ins-card-provider-art { transition: none; }
+  a.ins-card-art:hover svg,
+  a.ins-card-art:hover .ins-card-provider-art { transform: none; }
+}
+
+/* ── print to PDF (C6.4) ─────────────────────────────────────
+   The @page rule and the millimetre size are injected per print by
+   export.js, because they depend on the certificate's orientation. Both the
+   prefixed and unprefixed print-color-adjust ship: the default is `economy`,
+   which lets a printer strip a dark background. Foreground fills are not
+   affected, which is why the certificate goes in as inline SVG rather than as
+   a CSS background.
+   ─────────────────────────────────────────────────────────── */
+
+#print-root { display: none; }
+
+@media print {
+  body > *:not(#print-root) { display: none; }
+
+  #print-root {
+    display: block;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  #print-root svg { display: block; }
+}

@@ -1,0 +1,132 @@
+/* ══════════════════════════════════════════════════════════════
+   embed.html: the iframe widget. CONTRACTS.md C5.
+
+   This page runs inside somebody else's document, so it links neither the
+   header kit nor the footer kit (C5.2) and carries no page chrome of its own
+   beyond one attribution line. Tokens still come from the CDN base.css, and
+   the Insignia kit's own stylesheet draws the cards.
+
+   `theme` re-skins it by way of css/neorgon-themes.css, which declares
+   [data-theme] token blocks on the root and nothing else that matters without
+   a .header-bar on the page. The accent below reads --header-accent when a
+   theme set one and falls back to the site accent otherwise, so the theme
+   parameter changes something a visitor can see instead of being inert.
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent: #7c3aed;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html, body { height: auto; }
+
+body {
+  font-family: var(--font);
+  /* The widget paints its own ground rather than inheriting the host page's.
+     Every token this page draws with is from the fleet's dark set: --text-primary
+     is #f9f9f9 and --surface-1 is a 3% white wash, so a transparent body on a
+     light article renders white text on white and a wall of invisible cards.
+     Measured, not assumed: transparency was tried first and the card titles
+     disappeared. */
+  background: var(--bg);
+  color: var(--text-primary);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  line-height: 1.5;
+}
+
+/* A season repaints the ground from the theme's own tokens. */
+[data-theme] body { background: var(--header-bg-mid, var(--bg)); }
+
+[data-theme] {
+  --accent: var(--header-accent, #7c3aed);
+}
+
+.em-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ── the four states that are never a blank frame (C5.4) ───────*/
+.em-card {
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.em-card strong { color: var(--text-primary); }
+
+/* ── attribution (C5.2) ────────────────────────────────────────
+   One line, one link, no header. The only way out of this frame. */
+.em-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.em-foot a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.em-foot a:hover { text-decoration: underline; }
+
+/* ── the snippet, shown only when this page is NOT framed ──────
+   Inside somebody's article a "copy the code" bar is noise. Opened directly,
+   which is how a person previews their own wall, it is the point. */
+.em-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.em-snippet h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.em-snippet code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.em-snippet button {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: filter var(--dur-fast) var(--ease-out);
+}
+
+.em-snippet button:hover { filter: brightness(1.12); }
+
+@media (prefers-reduced-motion: reduce) {
+  .em-snippet button { transition: none; }
+}

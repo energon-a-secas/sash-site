@@ -1,94 +1,103 @@
 // ── Event handlers ───────────────────────────────────────────
-// All event listeners and user interaction handlers.
+// Every listener on both pages lives here. There is no inline onclick anywhere
+// in this project and nothing is put on `window` for markup to call: the
+// markup is markup, and the wiring is this file.
 
-/** @param {HTMLElement} root */
-function getFocusable(root) {
-  const sel = [
-    'a[href]',
-    'button:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(',');
-  return Array.from(root.querySelectorAll(sel)).filter((el) => {
-    if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true') return false;
-    return el.getClientRects().length > 0;
+import { $ } from './utils.js';
+import * as wallet from './wallet.js';
+import * as profile from './profile.js';
+
+/* ── the auth sheet, on both pages ──────────────────────────── */
+
+function bindAuth(signIn) {
+  const toggle = $('authToggle');
+  const panel = $('authPanel');
+
+  toggle?.addEventListener('click', () => {
+    // Signed out, Clerk's own dialog is the right surface: the sheet under the
+    // header is too small for the form. Signed in, the sheet holds the user
+    // button, so it opens as a sheet.
+    if ($('authUser')?.hasAttribute('hidden')) { signIn(); return; }
+    const open = panel.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  $('authSigninBtn')?.addEventListener('click', signIn);
+}
+
+/* ── index.html ─────────────────────────────────────────────── */
+
+export function bindWalletEvents() {
+  bindAuth(wallet.signIn);
+  $('heroSigninBtn')?.addEventListener('click', wallet.signIn);
+
+  $('handleForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void wallet.claimHandle($('handleInput').value);
+  });
+
+  $('lookupForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    wallet.lookUp($('lookupHandle').value);
+  });
+
+  $('editToggle')?.addEventListener('click', wallet.toggleEdit);
+
+  $('meForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void wallet.saveProfile();
+  });
+
+  $('avatarFromCookie')?.addEventListener('click', wallet.avatarFromCookie);
+  $('avatarShuffle')?.addEventListener('click', wallet.avatarShuffle);
+  $('avatarClear')?.addEventListener('click', wallet.avatarClear);
+
+  $('exportBtn')?.addEventListener('click', () => { void wallet.exportWallet(); });
+
+  $('showHidden')?.addEventListener('change', (e) => {
+    wallet.setShowHidden(e.target.checked);
+  });
+
+  document.querySelector('.sash-chips')?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sash-chip');
+    if (chip) wallet.setGroup(chip.dataset.group);
+  });
+
+  // The card controls are rebuilt on every paint, so they are delegated from
+  // the two containers rather than bound per button.
+  const onAction = (e) => {
+    const button = e.target.closest('[data-act]');
+    if (!button) return;
+    const id = button.dataset.id;
+    switch (button.dataset.act) {
+      case 'pin':
+      case 'unpin': void wallet.togglePin(id); break;
+      case 'hide':  void wallet.toggleHidden(id); break;
+      case 'up':    void wallet.moveShowcase(id, -1); break;
+      case 'down':  void wallet.moveShowcase(id, 1); break;
+      default: break;
+    }
+  };
+  $('awardSections')?.addEventListener('click', onAction);
+  $('showcaseList')?.addEventListener('click', onAction);
+}
+
+/* ── u.html ─────────────────────────────────────────────────── */
+
+export function bindProfileEvents() {
+  bindAuth(profile.signIn);
+
+  $('lookupForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    profile.lookUp($('lookupHandle').value);
+  });
+
+  $('exportBtn')?.addEventListener('click', () => { void profile.exportProfile(); });
+  $('embedToggle')?.addEventListener('click', profile.toggleEmbed);
+  $('embedCopy')?.addEventListener('click', () => { void profile.copyEmbed(); });
+
+  document.querySelector('.sash-chips')?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sash-chip');
+    if (chip) void profile.setGroup(chip.dataset.group);
   });
 }
-
-let _modalLastFocus = null;
-
-/** @param {string} id */
-export function openModal(id) {
-  const modal = document.getElementById(id);
-  if (!modal) return;
-  _modalLastFocus = /** @type {HTMLElement} */ (document.activeElement);
-  modal.removeAttribute('hidden');
-  document.body.classList.add('modal-open');
-  const dialog = modal.querySelector('.modal__dialog');
-  const list = dialog ? getFocusable(dialog) : [];
-  const closeBtn = modal.querySelector('.modal__header [data-modal-close]');
-  const toFocus = closeBtn && list.includes(closeBtn) ? closeBtn : list[0];
-  if (toFocus) toFocus.focus();
-}
-
-/** @param {string} id */
-export function closeModal(id) {
-  const modal = document.getElementById(id);
-  if (!modal) return;
-  modal.setAttribute('hidden', '');
-  document.body.classList.remove('modal-open');
-  if (_modalLastFocus && typeof _modalLastFocus.focus === 'function') {
-    _modalLastFocus.focus();
-  }
-  _modalLastFocus = null;
-}
-
-function getOpenModal() {
-  return document.querySelector('.modal:not([hidden])');
-}
-
-function onDocumentKeydown(e) {
-  const modal = getOpenModal();
-  if (!modal || !modal.id) return;
-
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    closeModal(modal.id);
-    return;
-  }
-
-  if (e.key !== 'Tab') return;
-  const dialog = modal.querySelector('.modal__dialog');
-  const list = dialog ? getFocusable(dialog) : [];
-  if (list.length === 0) return;
-  const first = list[0];
-  const last = list[list.length - 1];
-  if (e.shiftKey && document.activeElement === first) {
-    e.preventDefault();
-    last.focus();
-  } else if (!e.shiftKey && document.activeElement === last) {
-    e.preventDefault();
-    first.focus();
-  }
-}
-
-/** Clicks on backdrop / [data-modal-close] close the modal. */
-function onModalClick(e) {
-  const modal = /** @type {HTMLElement | null} */ (e.target.closest('.modal'));
-  if (!modal || modal.hasAttribute('hidden')) return;
-  const t = /** @type {HTMLElement} */ (e.target);
-  if (t.closest('[data-modal-close]')) closeModal(modal.id);
-}
-
-/** Bind all event listeners. Call once from app.js after render. */
-export function bindEvents(_state) {
-  document.addEventListener('keydown', onDocumentKeydown);
-  document.addEventListener('click', onModalClick);
-
-  document.getElementById('openDemoModal')?.addEventListener('click', () => openModal('demoModal'));
-}
-
-// If the HTML uses inline onclick="fn()" attributes, expose them:
-// window.myAction = function myAction() { ... };

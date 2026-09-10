@@ -1,0 +1,11 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://sash.neorgon.com/ob/issuer.json",
+  "type": ["Profile"],
+  "name": "Sash",
+  "url": "https://sash.neorgon.com/",
+  "description": "Sash issues parody badges. Nothing here is an accredited credential."
+}

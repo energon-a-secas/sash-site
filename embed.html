@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- NO FRAMED-PAGE GUARD HERE, and that is deliberate. C15 A36 puts one on
+       every other page of both sites, along with css/frame.css and
+       js/frame.js; this page exists to be framed, so none of the three may
+       ever appear in this file. -->
+
+  <!-- C13.3 as amended, minus the Clerk entries. This page loads no auth,
+       calls no authenticated function and must not hand a third-party document
+       a Clerk instance (C5.2). esm.sh stays: the Convex client comes from it.
+       The analytics hosts A37 restored are absent too, because this page links
+       no header kit and so has nothing to inject them. `https:` in img-src is
+       A38: an imported credential's artwork is third-party by definition and
+       this wall renders imported credentials like any other. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://cdn.neorgon.org https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: https://*.convex.cloud https://cdn.neorgon.org https://images.credly.com; connect-src 'self' https://*.convex.cloud https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self'; worker-src 'self' blob:">
+
+  <meta name="neo-convex-url" content="https://cool-puma-781.convex.cloud">
+  <!-- No clerk-publishable-key. C5.2: a third-party page does not get a Clerk
+       instance from us. -->
+
+  <meta name="robots" content="noindex, follow">
+  <title>Sash | Badge wall</title>
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <!-- Fleet design tokens: canonical, do not redeclare locally (PROJECTS.md section 5) -->
+  <link rel="stylesheet" href="https://cdn.neorgon.org/v1.0.0/styles/base.css">
+  <!-- Theme token blocks only. The header kit's chrome CSS and its script are
+       not linked here (C5.2); this file is what makes ?theme= mean something. -->
+  <link rel="stylesheet" href="css/neorgon-themes.css">
+  <link rel="stylesheet" href="css/neorgon-insignia.css">
+  <link rel="stylesheet" href="css/embed.css">
+
+  <!-- The theme bootstrap, and the only inline script on this page. It reads
+       the URL and nothing else: a cookie read would pull the visitor's own
+       fleet preference into a stranger's document, and C5.2 keeps this page
+       stateless. An unrecognised value is ignored (C5.1). -->
+  <script>(function(){var t=(location.search.match(/[?&]theme=([\w-]+)/)||[])[1];if(t&&['christmas','new-year','halloween','rain','sakura','matrix','danger'].indexOf(t)>-1)document.documentElement.dataset.theme=t;})();</script>
+
+  <!-- Every link in this document leaves the frame. A badge opening inside a
+       200px widget on somebody else's article is a trap. -->
+  <base target="_blank">
+
+  <script type="module" src="js/embed.js"></script>
+</head>
+<body>
+  <div class="em-wrap" id="wrap">
+    <div class="em-card">Loading this badge wall.</div>
+  </div>
+</body>
+</html>

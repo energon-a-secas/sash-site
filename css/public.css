@@ -1,0 +1,383 @@
+/* ══════════════════════════════════════════════════════════════
+   Sash public surfaces: badge.html (verify) and claim.html.
+
+   These two pages are where a stranger arrives, so they are self-contained:
+   they link the CDN base.css tokens, the header and footer kits, the Insignia
+   kit's own stylesheet, and this file. They do not link css/style.css, which
+   belongs to the signed-in wallet.
+
+   Tokens come from https://cdn.neorgon.org/v1.0.0/styles/base.css and nothing
+   here redeclares one. The single local knob is --accent (PROJECTS.md
+   section 5). No header or footer CSS lives here: both kits own their own.
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent: #7c3aed;
+  --accent-bright: #9061f9;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Two states a credential can be in that the page must not soften. A
+     revoked badge and an expired one are different facts and read as
+     different colours; neither is grey. */
+  --state-expired: #f0a02a;
+  --state-revoked: #f43f5e;
+}
+
+/* An author display value on .pv-facts or .pg-section would otherwise defeat
+   the hidden attribute, so restore its authority once. */
+[hidden] { display: none !important; }
+
+html { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.55;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0;
+  top: -60px;
+  z-index: 1000;
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) 0;
+  transition: top var(--dur) var(--ease-out);
+}
+.skip-link:focus { top: 0; }
+
+.pg-wrap {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) 64px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* Everything the page scripts build lands in #stage, so the rhythm between
+   sections is set once here rather than per section. */
+#stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── the disclosure (C11.6) ────────────────────────────────────
+   Above the art, above the fold, in plain words, never collapsed behind a
+   control and never demoted to the footer. It is the first thing in <main>
+   on both pages and the first thing a screen reader reaches after the skip
+   link, which is the point of it. */
+.pg-disclosure {
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.pg-disclosure p + p {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.pg-disclosure a { color: var(--accent-bright); }
+
+/* ── status banner ─────────────────────────────────────────────
+   The one element on the verify page that has to be readable from across a
+   room. Colour carries meaning here, so the word carries it too: a colourblind
+   reader and a greyscale printout both get "revoked" spelled out. */
+.pv-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  border: 2px solid var(--border-strong);
+  background: var(--surface-2);
+}
+
+.pv-status-word {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pv-status-note { color: var(--text-secondary); font-size: var(--text-sm); }
+
+.pv-status[data-status="valid"] { border-color: rgba(124, 58, 237, .55); }
+.pv-status[data-status="valid"] .pv-status-word { color: var(--accent-bright); }
+
+.pv-status[data-status="expired"] {
+  border-color: var(--state-expired);
+  background: rgba(240, 160, 42, .12);
+}
+.pv-status[data-status="expired"] .pv-status-word { color: var(--state-expired); }
+
+.pv-status[data-status="revoked"] {
+  border-color: var(--state-revoked);
+  background: rgba(244, 63, 94, .14);
+}
+.pv-status[data-status="revoked"] .pv-status-word { color: var(--state-revoked); }
+
+/* ── the artefact ──────────────────────────────────────────────
+   A certificate is 1.41 times as wide as it is tall, a badge is square, so
+   the frame sizes from the SVG's own aspect ratio rather than assuming one. */
+.pv-art {
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.pv-art svg {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  display: block;
+}
+
+.pv-art[data-kind="certificate"] svg { max-width: 720px; }
+
+/* An expired or revoked credential is dimmed a little, but only after the
+   banner has already said so in words. Dimming is never the only signal. */
+.pv-art[data-status="expired"] svg,
+.pv-art[data-status="revoked"] svg { opacity: .72; }
+
+.pv-art-import {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+.pv-art-import img { max-width: 240px; height: auto; border-radius: var(--radius); }
+
+/* ── sections and facts ────────────────────────────────────────*/
+.pg-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pg-section h3 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pg-title {
+  font-size: var(--text-2xl);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.pg-lead { color: var(--text-secondary); }
+
+.pg-prose {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pv-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+
+.pv-facts dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.pv-facts dd {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.pv-facts a { color: var(--accent-bright); }
+
+.pv-serial {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.pg-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.pg-chip {
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+/* ── the messages behind a stacked badge (C2.7) ────────────────*/
+.pv-kudos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pv-kudo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+}
+
+.pv-kudo-from { color: var(--accent-bright); font-size: var(--text-sm); flex: none; }
+.pv-kudo-text { color: var(--text-secondary); overflow-wrap: anywhere; }
+
+/* ── buttons ───────────────────────────────────────────────────*/
+.pg-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover { background: rgba(255, 255, 255, .1); border-color: var(--border-strong); }
+
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-size: var(--text-base);
+  min-height: 48px;
+  padding: 0 var(--space-8);
+  font-weight: 600;
+}
+.btn--primary:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
+
+/* ── notes and messages ────────────────────────────────────────*/
+.pg-note {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.pg-msg {
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+}
+
+.pg-msg h2 { font-size: var(--text-lg); margin-bottom: var(--space-2); text-transform: none; letter-spacing: 0; color: var(--text-primary); }
+.pg-msg p { color: var(--text-secondary); }
+.pg-msg a { color: var(--accent-bright); }
+.pg-msg + .pg-msg { margin-top: var(--space-3); }
+
+.pg-msg[data-tone="good"] { border-color: rgba(124, 58, 237, .6); background: rgba(124, 58, 237, .12); }
+.pg-msg[data-tone="warn"] { border-color: var(--state-expired); background: rgba(240, 160, 42, .1); }
+.pg-msg[data-tone="bad"]  { border-color: var(--state-revoked); background: rgba(244, 63, 94, .1); }
+
+/* ── claim page ────────────────────────────────────────────────*/
+.pc-offer {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 720px) {
+  .pc-offer { grid-template-columns: 320px 1fr; }
+}
+
+/* A21. The award's own validity window, rendered before the sign-in call to
+   action and never after it. `defaultValidityMs` is how long the badge lasts
+   once claimed; `expiresAt` is when the link stops working. They are two
+   different facts and they get two different rows, because presenting one as
+   the other is the defect the amendment exists to prevent. */
+.pc-terms {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-1);
+}
+
+.pc-term { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: baseline; }
+.pc-term dt { color: var(--text-muted); font-size: var(--text-sm); min-width: 13ch; }
+.pc-term dd { color: var(--text-primary); }
+.pc-term[data-key="validity"] dd { font-weight: 600; }
+
+.pc-gate h2 {
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+}
+
+.pc-gate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+
+.pc-signin { display: grid; justify-items: center; min-height: 0; }
+.pc-signin:empty { display: none; }
+
+.pc-who { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* ── footer note ───────────────────────────────────────────────*/
+.pg-foot-note { font-size: var(--text-sm); color: var(--text-muted); }
+.pg-foot-note a { color: var(--accent-bright); }
+
+@media (max-width: 600px) {
+  .pg-wrap { padding: var(--space-6) var(--space-3) 48px; }
+  .pv-facts { grid-template-columns: 1fr; gap: 0; }
+  .pv-facts dt { margin-top: var(--space-3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .skip-link { transition: none; }
+}

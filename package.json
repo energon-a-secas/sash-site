@@ -1,0 +1,16 @@
+{
+  "name": "sash-site",
+  "private": true,
+  "description": "Convex toolchain for the Sash and Enamel backend. The sites themselves are zero-build and load the Convex client from esm.sh.",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "test:enums": "node convex/tests/enums.test.mjs",
+    "test:limits": "node convex/tests/limits.test.mjs",
+    "test:seed": "node convex/tests/seed-idempotence.test.mjs",
+    "test": "npm run test:enums && npm run test:limits && npm run test:seed"
+  },
+  "dependencies": {
+    "convex": "^1.21.0"
+  }
+}
