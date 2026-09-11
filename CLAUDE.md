@@ -113,8 +113,14 @@ anywhere in this repo and no way to reach a holder who already downloaded the
 file. There is no revocation for a key that stopped existing.
 
 The public half is `ob/keys/1.json`, committed here. The private half is
-`OB_SIGNING_KEY` in the deployment's environment, and today that is **the dev
-deployment only** (`.env.local` names a `dev` deployment). `convex/ob.ts:259`
+`OB_SIGNING_KEY` on the **production** deployment (`youthful-oyster-436`, the
+URL every shipped page names in its `neo-convex-url` meta), set 2026-09-10 and
+never printed anywhere. Check that the two halves match with
+`npx convex env get --prod OB_SIGNING_KEY | shasum`, never with `env list`,
+which prints every line of a multi-line value into the terminal. The dev
+deployment named by `.env.local` holds a throwaway key that does **not** match
+`1.json`, so a badge exported against dev verifies nowhere, and that is
+expected. `convex/ob.ts:259`
 answers `{ ok:false, code:"no-key" }` without it, which is the C9.3 degraded
 export: the PNG still downloads, unsigned, and the page says so. That is the
 designed behaviour, not a warning that the key is missing, so a production
