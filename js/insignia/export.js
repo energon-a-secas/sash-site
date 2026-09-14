@@ -17,9 +17,109 @@
  * draws nothing. So every font and every image is inlined as a data URI before
  * serialisation, and anything that cannot be inlined throws. A badge exported in
  * the wrong typeface reports success, which is worse than an export that fails.
+ *
+ * One narrowing of that rule, H1 (2026-09-14). A character the family does not
+ * list (emoji, Arabic and CJK on all six roles) is never requested: Google
+ * answers 400, with no CORS header, to a subset made only of such characters,
+ * and the on-screen preview already draws them in the generic fallback of the
+ * role's stack because the linked stylesheet declares the same ranges. The
+ * export matches the screen there. It still throws for anything the family
+ * lists and cannot deliver, and the error names the field and the family.
  */
-import { renderSvg, usedFonts, normalizeDesign, ensureFonts } from './render.js';
+import { renderSvg, usedFonts, textRuns, normalizeDesign, ensureFonts } from './render.js';
+import { FONT_FAMILIES } from './schema.js';
 import { buildProfileSvg } from './wallet.js';
+
+/* ── what each family can draw (H1) ────────────────────────────────────────── */
+
+// Google's own `unicode-range` per subset, as its css2 reply declares them.
+// Fetched 2026-09-14 for each C7.14 family with a Chrome User-Agent. The ranges
+// are identical across families; only the subset list per family differs.
+//
+// Measured the same day, from the same reply: the font file behind a `&text=`
+// request answers 200 when at least one requested character sits in a listed
+// range (`WIN` plus a trophy, Cyrillic on Playfair Display) and 400 when none
+// does (three trophies, an Arabic word, two CJK characters on Playfair Display;
+// Cyrillic on Poppins, which lists no Cyrillic). Two characters inside a listed
+// range still answered 400 (U+A7FF, U+FFFD): the range is a block, not a glyph
+// list, so that residue stays a loud failure and is named as such below.
+const SUBSET_RANGES = {
+  latin: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+  'latin-ext': 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF',
+  cyrillic: 'U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116',
+  'cyrillic-ext': 'U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F',
+  greek: 'U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF',
+  'greek-ext': 'U+1F00-1FFF',
+  vietnamese: 'U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB',
+  devanagari: 'U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+20F0, U+25CC, U+A830-A839, U+A8E0-A8FF, U+11B00-11B09',
+};
+
+// The subsets each C7.14 family lists, in Google's reply of 2026-09-14. A family
+// absent here counts as covering everything, which is the behaviour before H1:
+// a new family is measured and added, never silently narrowed to Latin.
+export const FAMILY_SUBSETS = {
+  'Playfair Display': ['latin', 'latin-ext', 'cyrillic', 'vietnamese'],
+  'Roboto Slab': ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext', 'greek', 'greek-ext', 'vietnamese'],
+  Poppins: ['latin', 'latin-ext', 'devanagari'],
+  'JetBrains Mono': ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext', 'greek', 'vietnamese'],
+  'Great Vibes': ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext', 'greek-ext', 'vietnamese'],
+  Nunito: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext', 'vietnamese'],
+};
+
+const parseRanges = (spec) => spec.split(',').map((r) => {
+  const [lo, hi] = r.trim().replace(/^U\+/, '').split('-');
+  return [parseInt(lo, 16), parseInt(hi || lo, 16)];
+});
+const RANGES = Object.fromEntries(Object.entries(SUBSET_RANGES).map(([k, v]) => [k, parseRanges(v)]));
+
+/** True when `ch` is inside a subset Google lists for `family`. */
+export function familyCovers(family, ch) {
+  const subsets = FAMILY_SUBSETS[family];
+  if (!subsets) return true;
+  const cp = String(ch).codePointAt(0);
+  return subsets.some((s) => RANGES[s].some(([lo, hi]) => cp >= lo && cp <= hi));
+}
+
+/** A face's characters split into what its family lists and what falls back, each as a `subsetChars` string. */
+export function partitionChars(family, text) {
+  const covered = [];
+  const fallback = [];
+  for (const ch of String(text)) (familyCovers(family, ch) ? covered : fallback).push(ch);
+  return { covered: subsetChars(covered.join('')), fallback: subsetChars(fallback.join('')) };
+}
+
+// Field paths as `usedFonts` reports them, worded for the person who typed there.
+const FIELD_LABELS = {
+  'arcs.top': 'top arc words', 'arcs.bottom': 'bottom arc words', ribbon: 'ribbon words', mark: 'edition mark',
+  provenance: 'provenance strip', serial: 'serial', 'text.eyebrow': 'eyebrow line', 'text.title': 'title',
+  'text.holderLabel': 'holder label', 'text.holder': 'holder name', 'text.body': 'body text',
+  'text.issuerLine': 'issuer line', 'text.dateLabel': 'date line', 'profile.displayName': 'profile name',
+  'profile.handle': 'handle', 'profile.headline': 'headline', 'award.name': 'award name',
+  'import.line': 'imported credential line', 'poster.footer': 'poster footer',
+};
+
+/** `seal.arcs.top` reads as "seal top arc words", `signatures[1].name` as "signature 2 name". */
+export function fieldLabel(field) {
+  const f = String(field);
+  if (f.startsWith('seal.')) return `seal ${fieldLabel(f.slice(5))}`;
+  const sig = f.match(/^signatures\[(\d+)\]\.(name|role)$/);
+  if (sig) return `signature ${Number(sig[1]) + 1} ${sig[2]}`;
+  return FIELD_LABELS[f] || f;
+}
+
+/**
+ * Every field whose characters the role's family does not list, so a page can
+ * warn the author before the export, where those characters draw in the
+ * generic fallback exactly as they do in the preview. Empty when every glyph is
+ * covered. Each entry: `{ field, label, family, chars }`.
+ */
+export function fallbackRuns(design, provenance) {
+  return textRuns(design, provenance).map((run) => {
+    const f = FONT_FAMILIES[run.role] || FONT_FAMILIES.sans;
+    const { fallback } = partitionChars(f.family, run.text);
+    return fallback ? { field: run.field, label: fieldLabel(run.field), family: f.family, chars: fallback } : null;
+  }).filter(Boolean);
+}
 
 /* ── fonts (C6.3) ──────────────────────────────────────────────────────────── */
 
@@ -108,10 +208,32 @@ export async function inlineGoogleFont({ family, weight = 400, italic = false, t
  * Every face a set of runs needs, fetched in parallel.
  * A multi-family request returns one @font-face block per family and
  * `String.match` without /g returns only the first, so this asks per family.
+ *
+ * Each face is asked for only the characters its family lists (H1). A face left
+ * with none is skipped, and its runs draw in the generic fallback, as on screen.
+ * A face that still cannot be inlined throws an error naming the family, the
+ * fields it draws and the characters asked for, never a bare "Failed to fetch".
  */
 async function faceCss(faces) {
-  const rules = await Promise.all(faces.map((f) => inlineGoogleFont(f)));
-  return rules.join('\n');
+  const rules = await Promise.all(faces.map(async (f) => {
+    const { covered } = partitionChars(f.family, f.text);
+    if (!covered) return '';
+    try {
+      return await inlineGoogleFont({ ...f, text: covered });
+    } catch (err) {
+      throw new Error(describeFontFailure(f, covered, err), { cause: err });
+    }
+  }));
+  return rules.filter(Boolean).join('\n');
+}
+
+/** The message a page shows: which face, which fields, which characters, and what the browser said. */
+function describeFontFailure(face, chars, err) {
+  const where = (face.fields || []).map(fieldLabel).join(', ') || 'the text';
+  const shown = chars.replace(/\s+/g, '').slice(0, 24) || chars;
+  return `Google Fonts did not deliver ${face.family}, which draws the ${where}, for "${shown}". `
+    + 'The face may lack those characters, or the connection dropped. '
+    + `(${err && err.message ? err.message : String(err)})`;
 }
 
 /* ── images (C6.2 step 3) ──────────────────────────────────────────────────── */
@@ -182,7 +304,15 @@ export async function buildExportSvg(design, provenance) {
 export async function rasterise(svgText, { width, height, scale = 2 }) {
   const img = new Image();
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
-  await img.decode();                      // stronger than onload: it resolves on decoded pixels
+  try {
+    await img.decode();                    // stronger than onload: it resolves on decoded pixels
+  } catch (err) {
+    // The browser's own wording is "The source image cannot be decoded", which
+    // names nothing. It has one known cause left now that H2 strips control
+    // characters at normalisation, and that cause is said here.
+    throw new Error(`The browser could not decode the export as an SVG image (${err && err.message ? err.message : err}). `
+      + 'That means the serialised SVG was not well-formed; report the design that produced it.', { cause: err });
+  }
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);

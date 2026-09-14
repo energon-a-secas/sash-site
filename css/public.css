@@ -296,6 +296,35 @@ main {
 }
 .btn--primary:hover { background: var(--accent-bright); border-color: var(--accent-bright); }
 
+/* ── the lookup, when the address carries no id ────────────────
+   Drawn by js/badge.js under the "this address needs a credential id" card, so
+   the link that promises a lookup lands on one. */
+.pg-lookup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-4);
+}
+
+.pg-lookup input {
+  font: inherit;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  color: var(--text-primary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 0;
+  flex: 1 1 14ch;
+  letter-spacing: 0.08em;
+}
+
+.pg-lookup input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* ── notes and messages ────────────────────────────────────────*/
 .pg-note {
   font-size: var(--text-sm);
@@ -363,9 +392,6 @@ main {
   background: var(--surface-1);
 }
 
-.pc-signin { display: grid; justify-items: center; min-height: 0; }
-.pc-signin:empty { display: none; }
-
 .pc-who { color: var(--text-secondary); font-size: var(--text-sm); }
 
 /* ── footer note ───────────────────────────────────────────────*/
@@ -378,6 +404,14 @@ main {
   .pv-facts dt { margin-top: var(--space-3); }
 }
 
+/* The same rule css/style.css applies on the wallet pages, so a visitor who
+   asked for reduced motion gets the same answer on the two public pages: the
+   header kit's hover fades included, not only this file's own transitions. */
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
   .btn, .skip-link { transition: none; }
 }

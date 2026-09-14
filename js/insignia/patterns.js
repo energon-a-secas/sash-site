@@ -34,6 +34,23 @@ export function n(value) {
   return Object.is(r, -0) ? '0' : String(r);
 }
 
+/* ── text safety ───────────────────────────────────────────────────────────── */
+
+// XML 1.0 has no form for these code points, so a design carrying one
+// serialises to an SVG no parser accepts and an <img> cannot decode, while the
+// live preview, which never serialises, draws it without complaint. Every
+// string reaching a text node passes through `xmlSafe`: at normalisation for
+// the design, at the drawing helpers for provenance. Stripped rather than
+// escaped, since there is no glyph an author could have meant by U+0000. Tab,
+// line feed and carriage return are legal XML and stay, so they are not listed.
+export const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\uFFFE\uFFFF]|\p{Cs}/u;
+
+/** True when a string carries a code point XML cannot hold. */
+export const hasControl = (v) => CONTROL_RE.test(String(v));
+
+/** The same string with every such code point removed. */
+export const xmlSafe = (v) => String(v).replace(new RegExp(CONTROL_RE.source, 'gu'), '');
+
 /** The tile every whole-field pattern is generated on. */
 const FIELD = 512;
 

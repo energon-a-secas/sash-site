@@ -20,6 +20,7 @@
 import { framed } from './frame.js';
 import { convex, api } from './convex.js';
 import { renderSvg, ensureFonts } from './insignia/render.js';
+import { NeoAuth } from './neorgon-auth.js';
 import { el } from './utils.js';
 
 const $ = (id) => document.getElementById(id);
@@ -36,35 +37,16 @@ const HANDLE_RE = /^[a-z0-9][a-z0-9-]{1,29}$/;      // C4.2
 const MESSAGE_CAP = 240;                            // C14.4
 
 /* ── auth ──────────────────────────────────────────────────────────────────── */
+// The Auth Kit owns the header slot, the sign-in dialog and the Convex token.
+// This page only remembers whether there is a session, and asks for one in
+// front of the send.
 
-let clerk = null;
+const SIGN_IN_REASON = 'Sign in to send recognition.';
 let signedIn = false;
 
-async function initAuth() {
-  const key = document.querySelector('meta[name="clerk-publishable-key"]')?.content?.trim();
-  if (!key) { console.warn('Sash send: no clerk-publishable-key meta, sending is unavailable.'); return; }
-  const { initNeorgonClerkConvex, neorgonDisplayLabel } = await import('./vendor/neorgon-auth.js');
-  clerk = await initNeorgonClerkConvex({
-    convex,
-    publishableKey: key,
-    signInMode: 'modal',
-    userButtonHost: '#neorgon-user-mount',
-    onSession: ({ clerk: c, hasSession }) => {
-      signedIn = hasSession;
-      show($('authGate'), !hasSession);
-      show($('authUser'), hasSession);
-      $('authToggle')?.classList.toggle('logged-in', hasSession);
-      if (hasSession) { $('authUsername').textContent = neorgonDisplayLabel(c); authSheet(false); }
-    },
-  });
-}
-
-/** The header sheet. Wired here because these pages do not load js/events.js. */
-function authSheet(open) {
-  const panel = $('authPanel');
-  const on = open === undefined ? !panel.classList.contains('open') : open;
-  panel.classList.toggle('open', on);
-  $('authToggle').setAttribute('aria-expanded', on ? 'true' : 'false');
+function initAuth() {
+  NeoAuth.onChange((session) => { signedIn = session.signedIn; });
+  return NeoAuth.start({ convex });
 }
 
 /* ── the badge list ────────────────────────────────────────────────────────── */
@@ -195,9 +177,10 @@ async function send() {
   say(err, '');
   show(note, false);
 
-  if (!signedIn) {
+  // Signed out, the kit's dialog opens with this page's reason. Dismissed, the
+  // line below says why the send did not go; signed in, the send carries on.
+  if (!signedIn && !(await NeoAuth.requireSignIn({ reason: SIGN_IN_REASON, invoker: $('sendBtn') }))) {
     say(err, 'Sign in first. A badge has to come from somebody.');
-    authSheet(true);
     return;
   }
   if (!chosen) return say(err, 'Pick a badge first.');
@@ -285,8 +268,6 @@ function sent(res, toHandle) {
 function wire() {
   $('sendBtn').addEventListener('click', send);
   $('messageInput').addEventListener('input', countMessage);
-  $('authToggle').addEventListener('click', () => authSheet());
-  $('signInBtn').addEventListener('click', () => clerk && clerk.neorgonOpenSignIn());
   $('sendAnotherBtn').addEventListener('click', () => {
     show($('sentSection'), false);
     $('messageInput').value = '';
@@ -302,5 +283,5 @@ if (!framed) {
   wire();
   countMessage();
   loadBadges();
-  initAuth().catch((e) => console.warn('Sash send: Clerk did not load.', e));
+  initAuth().catch((e) => console.warn('Sash send: sign-in did not start.', e));
 }

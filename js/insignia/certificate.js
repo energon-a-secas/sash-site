@@ -16,7 +16,7 @@
  * therefore needs no interleaving. It refuses a payload over 106 bytes rather
  * than truncating one.
  */
-import { svgEl, n, patternDefs } from './patterns.js';
+import { svgEl, n, patternDefs, xmlSafe } from './patterns.js';
 import { provenanceLines } from './schema.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -46,26 +46,30 @@ export function layoutText(d, prov) {
   const t = d.text;
   const award = prov.mode === 'award';
   const items = [];
-  const put = (spec, value, y, extra = {}) => {
-    if (!value) return;
+  // `key` names the C1.2 text slot, so a run reports the field it came from.
+  // Provenance strings arrive unnormalised, so `xmlSafe` runs here for all of them.
+  const put = (key, value, y) => {
+    const spec = t[key];
+    const text = xmlSafe(value === null || value === undefined ? '' : value);
+    if (!text) return;
     items.push({
-      value: String(value), role: spec.font, size: spec.size, color: spec.color,
-      x: w / 2, y, anchor: 'middle', ...extra,
+      field: `text.${key}`, value: text, role: spec.font, size: spec.size, color: spec.color,
+      x: w / 2, y, anchor: 'middle',
     });
   };
 
-  put(t.eyebrow, t.eyebrow.value, h * 0.20);
-  put(t.title, t.title.value, h * 0.30);
-  put(t.holderLabel, t.holderLabel.value, h * 0.385);
-  put(t.holder, award ? prov.holder : (t.holder.value || prov.holder || HOLDER_PLACEHOLDER), h * 0.475);
-  put(t.body, t.body.value, h * 0.545);
+  put('eyebrow', t.eyebrow.value, h * 0.20);
+  put('title', t.title.value, h * 0.30);
+  put('holderLabel', t.holderLabel.value, h * 0.385);
+  put('holder', award ? prov.holder : (t.holder.value || prov.holder || HOLDER_PLACEHOLDER), h * 0.475);
+  put('body', t.body.value, h * 0.545);
 
   // An imported credential carries `issuerHandle: null` (A6), so there is no
   // line to draw rather than a line reading `issued by @null`. `put` skips an
   // empty value, which is what makes the null render as nothing.
   const issuedBy = prov.issuerHandle ? `issued by @${prov.issuerHandle}` : '';
   const issuer = award || !t.issuerLine.value ? issuedBy : t.issuerLine.value;
-  put(t.issuerLine, issuer, h * 0.585);
+  put('issuerLine', issuer, h * 0.585);
 
   const issued = formatDate(prov.issuedAt);
   const until = formatDate(prov.expiresAt);
@@ -73,7 +77,7 @@ export function layoutText(d, prov) {
     issued ? `${t.dateLabel.value} ${issued}` : '',
     until ? `valid until ${until}` : '',
   ].filter(Boolean).join('   ');
-  put(t.dateLabel, dateLine, h * 0.625);
+  put('dateLabel', dateLine, h * 0.625);
 
   // Signatures sit on their own rules, in the lower third, and never in the
   // middle: the seal is centred at `seal.x` 0.5 by default and a centred
@@ -82,10 +86,10 @@ export function layoutText(d, prov) {
   d.signatures.forEach((sig, i) => {
     const x = i === 0 ? w * 0.24 : w * 0.76;
     if (sig.name) {
-      items.push({ value: sig.name, role: 'script', size: 46, color: d.palette.ink, x, y: sigY, anchor: 'middle' });
+      items.push({ field: `signatures[${i}].name`, value: sig.name, role: 'script', size: 46, color: d.palette.ink, x, y: sigY, anchor: 'middle' });
     }
     if (sig.role) {
-      items.push({ value: sig.role, role: 'sans', size: 22, color: d.text.issuerLine.color, x, y: sigY + 54, anchor: 'middle' });
+      items.push({ field: `signatures[${i}].role`, value: sig.role, role: 'sans', size: 22, color: d.text.issuerLine.color, x, y: sigY + 54, anchor: 'middle' });
     }
     items.push({ rule: true, x, y: sigY + 16, width: w * 0.2 });
   });
@@ -109,14 +113,14 @@ export function layoutText(d, prov) {
 export function certificateRuns(d, prov, { sealRuns } = {}) {
   const runs = layoutText(d, prov)
     .filter((i) => !i.rule)
-    .map((i) => ({ role: i.role, text: i.value }));
+    .map((i) => ({ field: i.field, role: i.role, text: i.value }));
   const show = prov.mode !== 'award' ? d.serial.show : true;
-  if (show && prov.serial) runs.push({ role: d.serial.font, text: prov.serial });
+  if (show && prov.serial) runs.push({ field: 'serial', role: d.serial.font, text: xmlSafe(prov.serial) });
   if (d.seal.design) {
     if (typeof sealRuns !== 'function') {
       throw new TypeError('certificateRuns needs a sealRuns collector to read a seal design (C6.3)');
     }
-    for (const run of sealRuns(d.seal.design)) runs.push(run);
+    for (const run of sealRuns(d.seal.design)) runs.push({ ...run, field: `seal.${run.field}` });
   }
   return runs;
 }
@@ -242,7 +246,7 @@ function drawBand(root, d, prov, textNode) {
     }));
   }
   if (showSerial && prov.serial) {
-    root.appendChild(textNode(prov.serial, {
+    root.appendChild(textNode(xmlSafe(prov.serial), {
       x: w - pad - 24, y: top + 76, role: d.serial.font, size: d.serial.size, color: d.serial.color, anchor: 'end',
     }));
   }

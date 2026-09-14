@@ -7,7 +7,7 @@
  * `slug`, so **a slug is permanent once seeded** and renaming one creates a
  * second row rather than moving the first.
  *
- * The catalogue holds two different kinds of thing:
+ * The catalogue holds three different kinds of thing:
  *
  *   **Five milestones**, one per grant point in C2.9. Each is granted from
  *   inside the mutation that makes it true, by `grantNeorgon(ctx, subject,
@@ -26,8 +26,14 @@
  *   These exist so `kudos:send` has something to send on the day the site opens:
  *   it requires a template that is published and `stackable`, and until these
  *   are seeded there is none. They are `category: "recognition"` with a non-null
- *   `sphere`, which is the pairing C2.3 enforces, and they are the only rows
- *   here that stack.
+ *   `sphere`, which is the pairing C2.3 enforces.
+ *
+ *   **Three meme templates**, `category: "meme"` with `sphere: null`, the other
+ *   category C2.3 allows to stack. They and the ten above are the only rows
+ *   here that stack. send.html groups them under their own Memes heading, and
+ *   until these existed that heading never drew (SASH-PUB-14, 2026-09-10).
+ *   Plain jokes, drawn from the kit's own glyphs: no issuer, no logo, no
+ *   character anyone else owns.
  *
  * C11.7: none of the four accreditation words that contract names appears in
  * any system-generated string, which includes every name, description and
@@ -127,6 +133,7 @@ const FLEET = { base: "#7c3aed", accent: "#f5d67b", ink: "#0b1020", arcColor: "#
 const WORK = { base: "#06243f", accent: "#7fd4ff", ink: "#04182a", arcColor: "#dff2ff", pattern: "circuit" };
 const FUN = { base: "#2a0b2e", accent: "#ff7ad9", ink: "#150416", arcColor: "#ffe4f7", pattern: "dots" };
 const MINDSET = { base: "#04252b", accent: "#45e0c8", ink: "#012025", arcColor: "#d9fff7", pattern: "rays" };
+const MEME = { base: "#1c1a05", accent: "#e8ff47", ink: "#0f0e02", arcColor: "#f7ffd0", pattern: "noise" };
 
 const ring = (color: string, width = 10, inset = 0, style = "solid"): Ring =>
   ({ style, width, color, inset });
@@ -436,4 +443,67 @@ const RECOGNITION: CatalogEntry[] = [
   },
 ];
 
-export const NEORGON_TEMPLATES: CatalogEntry[] = [...MILESTONES, ...RECOGNITION];
+const MEMES: CatalogEntry[] = [
+  {
+    slug: "works-on-my-machine",
+    kind: "badge",
+    name: "Works On My Machine",
+    description: "It ran. Here. Once. That should count for something.",
+    criteria: "Send this to whoever said it with a straight face, and to yourself when you have earned it.",
+    skills: ["local optimism"],
+    category: "meme",
+    sphere: null,
+    access: "open",
+    stackable: true,
+    design: badge({
+      ...MEME,
+      shape: "rounded-square",
+      glyph: "bot",
+      rings: [ring("#e8ff47", 10, 10, "dashed")],
+      top: arc("WORKS ON MY", "rounded", 32, "#f7ffd0"),
+      bottom: arc("MACHINE", "rounded", 26, "#e8ff47"),
+    }),
+  },
+  {
+    slug: "cat-on-keyboard",
+    kind: "badge",
+    name: "Cat On Keyboard",
+    description: "The commit message was not written by a person, and the cat is not sorry.",
+    criteria: "Send this to whoever pushed a change with a paw print on it.",
+    skills: ["unplanned input"],
+    category: "meme",
+    sphere: null,
+    access: "open",
+    stackable: true,
+    design: badge({
+      ...MEME,
+      shape: "circle",
+      glyph: "cat",
+      rings: [ring("#e8ff47", 12), ring("#0f0e02", 4, 26, "beaded")],
+      top: arc("CAT ON KEYBOARD", "rounded", 30, "#f7ffd0"),
+      ribbon: { text: "asdfghjkl;", font: "mono", size: 22 },
+    }),
+  },
+  {
+    slug: "off-by-one",
+    kind: "badge",
+    name: "Off By One",
+    description: "Right answer, wrong neighbour. The loop ran once more than it should have, or once less.",
+    criteria: "Send this to whoever counted from one, and to whoever counted from zero and still missed.",
+    skills: ["boundary conditions"],
+    category: "meme",
+    sphere: null,
+    access: "open",
+    stackable: true,
+    design: badge({
+      ...MEME,
+      shape: "hexagon",
+      glyph: "dice-5",
+      rings: [ring("#e8ff47", 12, 12, "double")],
+      top: arc("OFF BY ONE", "rounded", 36, "#f7ffd0"),
+      pips: 4, // four of five, on purpose
+    }),
+  },
+];
+
+export const NEORGON_TEMPLATES: CatalogEntry[] = [...MILESTONES, ...RECOGNITION, ...MEMES];

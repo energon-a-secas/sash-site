@@ -2,11 +2,12 @@
 // A stranger with no account is the first reader of this page, so the profile
 // loads before auth does and never waits on it.
 
-import { state, q, startAuth, openSignIn } from './state.js';
+import { state, q, startAuth } from './state.js';
 import { renderSections, renderShowcase, resolveShowcase, renderCounts, avatarNode, setChip } from './render.js';
 import { exportProfilePng, triggerDownload, slugify } from './insignia/export.js';
 import { ensureFonts } from './insignia/render.js';
 import { HANDLE_RE } from './insignia/schema.js';
+import { escHtml } from './neorgon-dom.js';
 import { $, show, setError, showToast, param, GROUP_LABELS, plural } from './utils.js';
 
 /* ── boot ───────────────────────────────────────────────────── */
@@ -15,18 +16,13 @@ export async function initProfile() {
   ensureFonts();
   state.handle = param('h').toLowerCase();
   await load();
-  // Auth is for the header only here. A failure to load it leaves the profile
-  // on screen, because a reader of a public page never needed an account.
+  // Auth is for the header slot only here, and the Auth Kit paints that slot
+  // itself. A failure to start leaves the profile on screen, because a reader
+  // of a public page never needed an account.
   try {
-    await startAuth((signedIn) => {
-      $('authUsername').textContent = state.authLabel;
-      show($('authGate'), !signedIn);
-      show($('authUser'), signedIn);
-      $('authToggle').classList.toggle('logged-in', signedIn);
-    });
+    await startAuth(() => {});
   } catch (err) {
     console.error('Sash: auth did not start', err);
-    setError($('authError'), 'Sign-in did not load. The profile below does not need it.');
   }
 }
 
@@ -162,23 +158,24 @@ function showcaseFirst(awards, showcase) {
  * The embed snippet, exactly as C5.1 froze it.
  *
  * The literal string matters: it is the markup a reader pastes into somebody
- * else's page, and the contract names every attribute on it.
+ * else's page, and the contract names every attribute on it. Two things about
+ * it are deliberate. The name is escaped because it lands in an attribute of
+ * that page: a display name may carry a quote, and a raw one closes the title
+ * early and spills the rest into the host's markup. And the height is 640,
+ * which holds two rows of default cards at any column width; the widget trims
+ * itself to whatever height the host gives it, so nothing scrolls inside.
  */
 function paintEmbed(p) {
   const name = p.displayName || p.handle;
   const snippet =
     `<iframe src="https://sash.neorgon.com/embed.html?h=${p.handle}&group=all&limit=12"\n`
-    + `        title="${name} on Sash" width="100%" height="420"\n`
+    + `        title="${escHtml(name)} on Sash" width="100%" height="640"\n`
     + `        style="border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
   $('embedSnippet').textContent = snippet;
   $('embedPreview').href = `embed.html?h=${encodeURIComponent(p.handle)}&group=all&limit=12`;
 }
 
 /* ── actions ────────────────────────────────────────────────── */
-
-export function signIn() {
-  if (!openSignIn()) setError($('authError'), 'Sign-in has not loaded yet. Try again in a moment.');
-}
 
 export async function setGroup(group) {
   state.group = group;
@@ -231,7 +228,7 @@ export async function exportProfile() {
     triggerDownload(blob, `${slugify(p.handle)}${suffix}.png`);
   } catch (err) {
     console.error('Sash: the export failed', err);
-    showToast('The picture could not be drawn. The console has the reason.');
+    showToast('The picture could not be drawn. Try again; if it keeps failing, use the report control in the bottom left corner.');
   } finally {
     button.disabled = false;
     button.textContent = label;

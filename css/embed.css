@@ -77,6 +77,18 @@ body {
   color: var(--text-muted);
 }
 
+/* The right-hand side: an optional "+N more" count, then the link. Framed,
+   the wall is trimmed to the whole cards that fit, and the count is how many
+   loaded cards the frame left out. */
+.em-foot-link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.em-more { color: var(--text-secondary); }
+
 .em-foot a {
   color: var(--accent);
   text-decoration: none;

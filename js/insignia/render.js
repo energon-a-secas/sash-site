@@ -43,8 +43,7 @@ export function artUrl(ref) {
 
 /* ── deterministic ids (C1.6) ──────────────────────────────────────────────── */
 
-let idSeq = 0;
-let idPrefix = 'ins';
+let idSeq = 0, idPrefix = 'ins';
 
 export function nextId(prefix) {
   idSeq += 1;
@@ -76,8 +75,7 @@ function idSaltFor(design, provenance) {
 /* ── the field ─────────────────────────────────────────────────────────────── */
 
 const F = SHAPE_FIELD;          // 512
-const CX = F / 2;
-const CY = F / 2;
+const CX = F / 2, CY = F / 2;
 const R = 236;                  // the nominal outer radius every shape is drawn to
 const ARC_MARGIN = 24;
 // The lower half of the field is shared by four optional elements and the strip,
@@ -88,8 +86,7 @@ const ARC_MARGIN = 24;
 const BOTTOM_ARC_R = 174;       // a baseline at y 430, clear of the strip below it
 const STRIP_TOP = 434;
 const PIP_Y = 318;
-const RIBBON_TOP = 336;
-const RIBBON_BOTTOM = 394;
+const RIBBON_TOP = 336, RIBBON_BOTTOM = 394;
 const MARK_Y = 118;
 // A24. The strip's bottom line is the verify URL, whose length the renderer does
 // not get to choose, so its size comes from the string and `textLength` pins the
@@ -217,11 +214,12 @@ function renderSealSvg(design, provenance) {
 function titleFor(d, prov) {
   // A14: the accessible name says which artefact this is, for the same reason
   // the band does. A screen reader announcing "badge" over a certificate is the
-  // same mislabel, read aloud.
+  // same mislabel, read aloud. The ribbon counts as words: three seeded badges
+  // carry theirs on the ribbon alone and were announced as "community badge".
   const label = originLabel(prov.origin, d.kind);
   if (d.kind === 'certificate') return `${d.text.title.value} certificate, ${label.toLowerCase()}`;
-  const arcs = [d.arcs.top && d.arcs.top.text, d.arcs.bottom && d.arcs.bottom.text].filter(Boolean);
-  return arcs.length ? `${arcs.join(' ')}, ${label.toLowerCase()}` : label.toLowerCase();
+  const words = [d.arcs.top && d.arcs.top.text, d.arcs.bottom && d.arcs.bottom.text, d.ribbon && d.ribbon.text].filter(Boolean);
+  return words.length ? `${words.join(' ')}, ${label.toLowerCase()}` : label.toLowerCase();
 }
 
 /* ── the badge ─────────────────────────────────────────────────────────────── */
@@ -433,16 +431,16 @@ function drawProvenance(stage, d, prov) {
  */
 function badgeRuns(d) {
   const runs = [];
-  const add = (role, text) => { if (text) runs.push({ role, text: String(text) }); };
-  if (d.arcs.top) add(d.arcs.top.font, d.arcs.top.text);
-  if (d.arcs.bottom) add(d.arcs.bottom.font, d.arcs.bottom.text);
-  if (d.ribbon) add(d.ribbon.font, d.ribbon.text);
-  add('sans', markText(d));
+  const add = (field, role, text) => { if (text) runs.push({ field, role, text: String(text) }); };
+  if (d.arcs.top) add('arcs.top', d.arcs.top.font, d.arcs.top.text);
+  if (d.arcs.bottom) add('arcs.bottom', d.arcs.bottom.font, d.arcs.bottom.text);
+  if (d.ribbon) add('ribbon', d.ribbon.font, d.ribbon.text);
+  add('mark', 'sans', markText(d));
   return runs;
 }
 
-/** Every role the design actually draws with, and the exact string each draws. */
-function textRuns(design, provenance) {
+/** Every role drawn, the exact string each draws, and the field it came from (named on export failure). */
+export function textRuns(design, provenance) {
   const d = normalizeDesign(design);
   // `badgeRuns` goes in for the same reason `renderSealSvg` does in `renderSvg`:
   // certificate.js can neither draw a badge nor read one, so one module supplies
@@ -454,8 +452,8 @@ function textRuns(design, provenance) {
   // the same letters, and a character the `&text=` subset leaves out falls back
   // per character and shifts every advance in the run (C6.3).
   const lines = provenanceLines(provenance, d.kind);
-  return [...drawn, { role: 'sans', text: lines.top }, { role: 'mono', text: lines.bottom }]
-    .filter((run) => run.text).map((run) => ({ role: run.role, text: String(run.text) }));
+  return [...drawn, { field: 'provenance', role: 'sans', text: lines.top }, { field: 'provenance', role: 'mono', text: lines.bottom }]
+    .filter((run) => run.text).map((run) => ({ field: run.field, role: run.role, text: String(run.text) }));
 }
 
 /**
@@ -464,18 +462,20 @@ function textRuns(design, provenance) {
  *
  * The returned `text` is the sorted unique character set, because that is what
  * the Google Fonts reply's `unicode-range` comes back as: any character left out
- * falls back per character and shifts every textPath advance.
+ * falls back per character and shifts every textPath advance. `fields` lists
+ * the sorted field paths the face draws, for the exporter's failure message.
  */
 export function usedFonts(design, provenance) {
   const byFace = new Map();
   for (const run of textRuns(design, provenance)) {
     const f = FONT_FAMILIES[run.role] || FONT_FAMILIES.sans;
     const key = `${f.family}|${f.weight}|${f.italic}`;
-    const seen = byFace.get(key) || { family: f.family, weight: f.weight, italic: f.italic, chars: new Set() };
+    const seen = byFace.get(key) || { family: f.family, weight: f.weight, italic: f.italic, chars: new Set(), fields: new Set() };
     for (const ch of run.text) seen.chars.add(ch);
+    seen.fields.add(run.field);
     byFace.set(key, seen);
   }
-  return [...byFace.values()].map((f) => ({ family: f.family, weight: f.weight, italic: f.italic, text: [...f.chars].sort().join('') }))
+  return [...byFace.values()].map((f) => ({ family: f.family, weight: f.weight, italic: f.italic, text: [...f.chars].sort().join(''), fields: [...f.fields].sort() }))
     .sort((a, b) => (a.family < b.family ? -1 : a.family > b.family ? 1 : 0));
 }
 

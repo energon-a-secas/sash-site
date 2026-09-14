@@ -23,7 +23,7 @@
 import { renderSvg, usedFonts, setArtUrls, familyFor } from './render.js';
 import { FONT_FAMILIES } from './schema.js';
 import { formatDate } from './certificate.js';
-import { svgEl, n } from './patterns.js';
+import { svgEl, n, xmlSafe } from './patterns.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -147,7 +147,7 @@ export function renderAwardCard(award, opts = {}) {
   // `importMeta` instead. A null is never drawn: the line is left out entirely
   // rather than reading `@null` or a bare `@`.
   const issuer = imported
-    ? (award.importMeta && award.importMeta.issuerName) || 'unknown issuer'
+    ? (award.importMeta && award.importMeta.issuerName) || 'issuer not stated'
     : (award.issuerHandle ? `@${award.issuerHandle}` : '');
   const meta = el('p', 'ins-card-meta');
   if (issuer) meta.appendChild(el('span', 'ins-card-issuer', issuer));
@@ -300,21 +300,24 @@ export function buildProfileSvg(awards, profile, opts = {}) {
   });
   svg.appendChild(svgEl('rect', { width: String(POSTER_W), height: String(height), fill: background }));
 
-  const text = (value, { x, y, role, size: fs, color, anchor = 'start' }) => {
-    if (!value) return;
-    runs.push({ role, text: String(value) });
+  // Profile strings arrive unnormalised, so `xmlSafe` runs here (H2). `field`
+  // is what the exporter names when a face cannot be fetched (H1).
+  const text = (value, { x, y, role, size: fs, color, anchor = 'start', field = 'poster' }) => {
+    const safe = xmlSafe(value === null || value === undefined ? '' : value);
+    if (!safe) return;
+    runs.push({ field, role, text: safe });
     const node = svgEl('text', {
       x: n(x), y: n(y), 'font-family': familyFor(role), 'font-size': n(fs),
       'font-weight': String(faceOf(role).weight), 'text-anchor': anchor, fill: color,
     });
-    node.textContent = String(value);
+    node.textContent = safe;
     svg.appendChild(node);
   };
 
   const p = profile || {};
-  text(p.displayName || p.handle || title, { x: PAD, y: 108, role: 'display', size: 64, color: ink });
-  text(p.handle ? `@${p.handle}` : '', { x: PAD, y: 156, role: 'sans', size: 30, color: muted });
-  text(p.headline || title, { x: PAD, y: 200, role: 'sans', size: 26, color: muted });
+  text(p.displayName || p.handle || title, { x: PAD, y: 108, role: 'display', size: 64, color: ink, field: 'profile.displayName' });
+  text(p.handle ? `@${p.handle}` : '', { x: PAD, y: 156, role: 'sans', size: 30, color: muted, field: 'profile.handle' });
+  text(p.headline || title, { x: PAD, y: 200, role: 'sans', size: 26, color: muted, field: 'profile.headline' });
 
   setArtUrls(artMapFor(drawn));
   drawn.forEach((award, i) => {
@@ -328,16 +331,16 @@ export function buildProfileSvg(awards, profile, opts = {}) {
     svg.appendChild(badge);
     for (const face of usedFonts(award.design, provenanceOf(award))) runs.push({ face });
     const label = (award.name || '').slice(0, 22);
-    text(label, { x: x + size / 2, y: y + size + 34, role: 'sans', size: 20, color: ink, anchor: 'middle' });
+    text(label, { x: x + size / 2, y: y + size + 34, role: 'sans', size: 20, color: ink, anchor: 'middle', field: 'award.name' });
   });
 
   imported.forEach((award, i) => {
     const meta = award.importMeta || { provider: 'elsewhere', name: award.name, issuerName: '' };
-    text(importLine(meta), { x: PAD, y: importTop + i * 40 + 24, role: 'sans', size: 22, color: muted });
+    text(importLine(meta), { x: PAD, y: importTop + i * 40 + 24, role: 'sans', size: 22, color: muted, field: 'import.line' });
   });
 
   const foot = p.handle ? `sash.neorgon.com/u.html?h=${p.handle}` : 'sash.neorgon.com';
-  text(foot, { x: PAD, y: height - PAD + 12, role: 'mono', size: 22, color: muted });
+  text(foot, { x: PAD, y: height - PAD + 12, role: 'mono', size: 22, color: muted, field: 'poster.footer' });
 
   return { svg, width: POSTER_W, height, fonts: mergeFaces(runs) };
 }
@@ -348,18 +351,19 @@ const faceOf = (role) => FONT_FAMILIES[role] || FONT_FAMILIES.sans;
 /** Merge the poster's own runs and every nested badge's faces into one list. */
 function mergeFaces(runs) {
   const byFace = new Map();
-  const add = (family, weight, italic, chars) => {
+  const add = (family, weight, italic, chars, fields) => {
     const key = `${family}|${weight}|${italic}`;
-    const seen = byFace.get(key) || { family, weight, italic, chars: new Set() };
+    const seen = byFace.get(key) || { family, weight, italic, chars: new Set(), fields: new Set() };
     for (const ch of chars) seen.chars.add(ch);
+    for (const field of fields) seen.fields.add(field);
     byFace.set(key, seen);
   };
   for (const run of runs) {
-    if (run.face) { add(run.face.family, run.face.weight, run.face.italic, run.face.text); continue; }
+    if (run.face) { add(run.face.family, run.face.weight, run.face.italic, run.face.text, run.face.fields || []); continue; }
     const f = faceOf(run.role);
-    add(f.family, f.weight, f.italic, run.text);
+    add(f.family, f.weight, f.italic, run.text, [run.field]);
   }
   return [...byFace.values()]
-    .map((f) => ({ family: f.family, weight: f.weight, italic: f.italic, text: [...f.chars].sort().join('') }))
+    .map((f) => ({ family: f.family, weight: f.weight, italic: f.italic, text: [...f.chars].sort().join(''), fields: [...f.fields].sort() }))
     .sort((a, b) => (a.family < b.family ? -1 : a.family > b.family ? 1 : 0));
 }

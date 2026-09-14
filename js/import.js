@@ -28,6 +28,8 @@ import { framed } from './frame.js';
 import { convex, api } from './convex.js';
 import { unbakePng, unbakeSvg, parseCredential, OB3_KEYWORD } from './insignia/openbadges.js';
 import { renderAwardCard } from './insignia/wallet.js';
+import { NeoAuth } from './neorgon-auth.js';
+import { formatDate } from './insignia/certificate.js';
 import { el, stamp } from './utils.js';
 
 const $ = (id) => document.getElementById(id);
@@ -41,42 +43,27 @@ function say(node, message) {
 }
 
 /* ── auth ──────────────────────────────────────────────────────────────────── */
+// The Auth Kit owns the header slot, the sign-in dialog and the Convex token.
+// This page only remembers whether there is a session, and asks for one in
+// front of the two calls that need it.
 
-let clerk = null;
+const SIGN_IN_REASON = 'Sign in to save an imported credential to your wallet.';
 let signedIn = false;
 
-async function initAuth() {
-  const key = document.querySelector('meta[name="clerk-publishable-key"]')?.content?.trim();
-  if (!key) { console.warn('Sash import: no clerk-publishable-key meta, saving is unavailable.'); return; }
-  const { initNeorgonClerkConvex, neorgonDisplayLabel } = await import('./vendor/neorgon-auth.js');
-  clerk = await initNeorgonClerkConvex({
-    convex,
-    publishableKey: key,
-    signInMode: 'modal',            // the only host here is the header sheet
-    userButtonHost: '#neorgon-user-mount',
-    onSession: ({ clerk: c, hasSession }) => {
-      signedIn = hasSession;
-      show($('authGate'), !hasSession);
-      show($('authUser'), hasSession);
-      $('authToggle')?.classList.toggle('logged-in', hasSession);
-      if (hasSession) { $('authUsername').textContent = neorgonDisplayLabel(c); authSheet(false); }
-    },
-  });
+function initAuth() {
+  NeoAuth.onChange((session) => { signedIn = session.signedIn; });
+  return NeoAuth.start({ convex });
 }
 
-/** The header sheet. Wired here because these pages do not load js/events.js. */
-function authSheet(open) {
-  const panel = $('authPanel');
-  const on = open === undefined ? !panel.classList.contains('open') : open;
-  panel.classList.toggle('open', on);
-  $('authToggle').setAttribute('aria-expanded', on ? 'true' : 'false');
-}
-
-function requireSignIn(target) {
-  if (signedIn) return false;
+/**
+ * True when there is a session, or once the kit's dialog produced one. False
+ * when the dialog was dismissed, with the reason written into `target`.
+ */
+async function ensureSignedIn(target, invoker) {
+  if (signedIn) return true;
+  if (await NeoAuth.requireSignIn({ reason: SIGN_IN_REASON, invoker })) return true;
   say(target, 'Sign in first. Sash needs to know whose wallet this goes into.');
-  authSheet(true);
-  return true;
+  return false;
 }
 
 /* ── the record being previewed ────────────────────────────────────────────── */
@@ -134,8 +121,10 @@ function renderPreview() {
   row('Name', preview.name);
   row('Issuer', preview.issuerName);
   row('Issuer site', preview.issuerUrl, true);
-  row('Issued', preview.issuedOn);
-  row('Expires', preview.expiresOn);
+  // Dates as the card beside them prints them. A raw ISO timestamp painted at
+  // a reader is the defect C15 A42.2 exists to stop.
+  row('Issued', formatDate(preview.issuedOn));
+  row('Expires', formatDate(preview.expiresOn));
   row('Description', preview.description);
   row('Criteria', preview.criteriaNarrative);
   row('Criteria page', preview.criteriaUrl, true);
@@ -166,7 +155,7 @@ async function readUrl() {
   say(err, '');
   const url = $('urlInput').value.trim();
   if (!url) return say(err, 'Paste the address of one badge first.');
-  if (requireSignIn(err)) return;
+  if (!(await ensureSignedIn(err, $('readUrlBtn')))) return;
 
   const btn = $('readUrlBtn');
   btn.disabled = true;
@@ -220,7 +209,7 @@ async function readPng(file) {
   }
   if (found.legacyUrl) return handOffHostedUrl(found.payload);
   const dialect = found.keyword === OB3_KEYWORD ? 'ob3-jws' : 'ob2-png';
-  accept(found.payload, { dialect, from: `the PNG you uploaded, which carries an ${found.keyword} chunk` });
+  accept(found.payload, { dialect, from: 'the PNG you uploaded, which has the badge baked in' });
 }
 
 async function readSvg(file) {
@@ -325,7 +314,7 @@ async function save() {
   const err = $('saveError');
   say(err, '');
   if (!preview) return;
-  if (requireSignIn(err)) return;
+  if (!(await ensureSignedIn(err, $('saveBtn')))) return;
 
   if (!preview.sourceUrl) {
     const fixed = $('sourceFixInput').value.trim();
@@ -477,11 +466,9 @@ function wire() {
   $('saveBtn').addEventListener('click', save);
   $('discardBtn').addEventListener('click', clearPreview);
   $('importAnotherBtn').addEventListener('click', startOver);
-  $('authToggle').addEventListener('click', () => authSheet());
-  $('signInBtn').addEventListener('click', () => clerk && clerk.neorgonOpenSignIn());
   $('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') readUrl(); });
 }
 
 // A36: framed, the notice stands in for the page. No listener is bound and
-// Clerk is never asked for, so nothing here can write while framed.
-if (!framed) { wire(); initAuth().catch((e) => console.warn('Sash import: Clerk did not load.', e)); }
+// the kit is never started, so nothing here can write while framed.
+if (!framed) { wire(); initAuth().catch((e) => console.warn('Sash import: sign-in did not start.', e)); }

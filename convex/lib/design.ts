@@ -99,6 +99,11 @@ function int(p: Problems, value: unknown, path: string, min: number, max: number
   if (value < min || value > max) p.push(`${path} must be between ${min} and ${max}, got ${value}`);
 }
 
+// C15 A97: the same code points the kit's xmlSafe strips (packages/neorgon-ui/insignia/patterns.js).
+// XML 1.0 cannot hold them, so a stored row carrying one would render clean on screen and still
+// be a template nobody can export; refusing it at the server is the control, the kit strip is advice.
+const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 function str(p: Problems, value: unknown, path: string, max: number, required: boolean) {
   if (value === undefined || value === null) {
     if (required) p.push(`${path} is required`);
@@ -109,6 +114,7 @@ function str(p: Problems, value: unknown, path: string, max: number, required: b
     return;
   }
   if (value.length > max) p.push(`${path} is limited to ${max} characters, got ${value.length}`);
+  if (CONTROL_RE.test(value)) p.push(`${path} must not contain control characters`);
 }
 
 function member(p: Problems, value: unknown, path: string, list: readonly string[], required: boolean) {

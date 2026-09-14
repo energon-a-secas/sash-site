@@ -1,8 +1,10 @@
 // ── State ────────────────────────────────────────────────────
 // One shared mutable object, plus the session boot. Every module imports the
-// same reference. Nothing here touches the DOM.
+// same reference. Nothing here touches the DOM: the header slot and the sign-in
+// dialog are the Auth Kit's (js/neorgon-auth.js, vendored, never edited here).
 
 import { convex, api } from './convex.js';
+import { NeoAuth } from './neorgon-auth.js';
 
 const PREFS_KEY = 'sash-prefs';
 
@@ -11,7 +13,6 @@ export const state = {
   ready: false,             // the first load has settled, success or not
   signedIn: false,
   authLabel: '',
-  clerk: null,
 
   profile: null,            // profiles:me      (wallet page)
   publicProfile: null,      // profiles:byHandle (profile page). Carries `showcase` since A39.
@@ -64,39 +65,22 @@ export const m = {
 /* ── Session ────────────────────────────────────────────────── */
 
 /**
- * Boot Clerk and keep the Convex client's JWT in step.
+ * Start the Auth Kit and keep the Convex client's token in step with it.
  *
- * The public profile must render for a stranger, so this is always called
- * after the page's own data has loaded and a failure here is reported in the
- * auth sheet rather than thrown at the page.
+ * The kit owns the header slot and the sign-in dialog, so nothing here paints
+ * a signed-in state into markup. `onSession` hears the settled state once, then
+ * every real change (signed in, signed out, another account), never a token
+ * refresh tick. The public profile must render for a stranger, so this is
+ * always called after the page's own data has loaded.
+ *
+ * A production key on localhost, or a blocked clerk-js, is reported inside the
+ * kit's dialog when somebody asks to sign in. It never throws at the page.
  */
-export async function startAuth(onSession) {
-  const key = document.querySelector('meta[name="clerk-publishable-key"]')?.content?.trim();
-  if (!key) throw new Error('clerk-publishable-key meta tag is missing');
-
-  const { initNeorgonClerkConvex, neorgonDisplayLabel } = await import('./vendor/neorgon-auth.js');
-  state.clerk = await initNeorgonClerkConvex({
-    convex,
-    publishableKey: key,
-    signInHost: '#neorgon-signin-mount',
-    // The only host here is the header sheet, which is too small for the form.
-    signInMode: 'modal',
-    userButtonHost: '#neorgon-user-mount',
-    signInProps: { appearance: { layout: { unsafe_disableDevelopmentModeWarnings: true } } },
-    onSession: ({ clerk, hasSession }) => {
-      state.signedIn = hasSession;
-      state.authLabel = hasSession ? neorgonDisplayLabel(clerk) : '';
-      onSession(hasSession);
-    },
+export function startAuth(onSession) {
+  NeoAuth.onChange(({ signedIn, label }) => {
+    state.signedIn = signedIn;
+    state.authLabel = signedIn ? label : '';
+    onSession(signedIn);
   });
-  return state.clerk;
-}
-
-/** Open Clerk's own dialog. Returns false when auth has not booted yet. */
-export function openSignIn() {
-  if (state.clerk && typeof state.clerk.neorgonOpenSignIn === 'function') {
-    state.clerk.neorgonOpenSignIn();
-    return true;
-  }
-  return false;
+  return NeoAuth.start({ convex });
 }

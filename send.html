@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Sash">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="neo-mark" content="on">
   <!-- Framed-page guard (CONTRACTS.md C15 A36, which replaced C5.3's buster).
        GitHub Pages sets no response header and a meta CSP cannot carry
        frame-ancestors, so framing cannot be prevented here. This marks the
@@ -10,22 +16,16 @@
        css/frame.css plus js/frame.js put a notice in place of the page.
        embed.html carries none of this: being framed is its whole purpose. -->
   <script>if (window.top !== window.self) document.documentElement.dataset.framed = 'on';</script>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://clerk.neorgon.com https://challenges.cloudflare.com https://gc.zgo.at https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.neorgon.org https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: https://*.convex.cloud https://cdn.neorgon.org https://img.clerk.com https://images.credly.com https://neorgon.goatcounter.com; connect-src 'self' https://*.convex.cloud https://clerk.neorgon.com https://accounts.neorgon.com https://clerk-telemetry.com https://api.clerk.com https://challenges.cloudflare.com https://neorgon.goatcounter.com https://cloudflareinsights.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com https://clerk.neorgon.com https://accounts.neorgon.com https://sash.neorgon.com https://enamel.neorgon.com; worker-src 'self' blob:">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <meta name="apple-mobile-web-app-title" content="Sash">
-  <link rel="manifest" href="/site.webmanifest">
-  <meta name="neo-mark" content="on">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh https://clerk.neorgon.com https://challenges.cloudflare.com https://gc.zgo.at https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.neorgon.org https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: https://*.convex.cloud https://cdn.neorgon.org https://img.clerk.com https://images.credly.com https://neorgon.goatcounter.com; connect-src 'self' https://*.convex.cloud https://clerk.neorgon.com https://accounts.neorgon.com https://challenges.cloudflare.com https://neorgon.goatcounter.com https://cloudflareinsights.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com https://clerk.neorgon.com https://accounts.neorgon.com https://sash.neorgon.com https://enamel.neorgon.com; worker-src 'self' blob:">
   <title>Sash | Send recognition</title>
   <meta name="description" content="Send a stackable recognition or meme badge to a Sash handle with a short message, and watch the count stack on their profile">
-  <meta property="og:title" content="Sash: Send recognition">
+  <meta property="og:title" content="Sash: send recognition">
   <meta property="og:description" content="Hand someone a badge and a line about why">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://sash.neorgon.com/send.html">
   <meta property="og:site_name" content="Neorgon">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Sash: Send recognition">
+  <meta name="twitter:title" content="Sash: send recognition">
   <meta name="twitter:description" content="Hand someone a badge and a line about why">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://sash.neorgon.com/send.html">
@@ -39,6 +39,7 @@
 
   <meta name="neo-convex-url" content="https://youthful-oyster-436.convex.cloud">
   <meta name="clerk-publishable-key" content="pk_live_Y2xlcmsubmVvcmdvbi5jb20k">
+  <meta name="neo-auth-reason" content="Sign in to send recognition.">
 
   <link rel="stylesheet" href="https://cdn.neorgon.org/v1.0.0/styles/base.css">
   <link rel="stylesheet" href="css/style.css">
@@ -52,6 +53,9 @@
   <script defer src="js/neorgon-header.js"></script>
   <link rel="stylesheet" href="css/neorgon-footer.css">
   <script defer src="js/neorgon-footer.js"></script>
+  <!-- Neorgon Auth Kit (vendored; packages/neorgon-ui/sync-auth.sh). Owns the
+       header slot, the sign-in dialog and the Convex token. -->
+  <link rel="stylesheet" href="css/neorgon-auth.css">
   <meta name="beacon-site" content="sash-site">
   <link rel="stylesheet" href="css/neorgon-beacon.css">
   <script defer src="js/neorgon-beacon.js"></script>
@@ -78,13 +82,7 @@
         <a class="btn btn--ghost btn--sm" href="policy.html">Policy</a>
       </div>
 
-      <button type="button" class="auth-toggle" id="authToggle" aria-label="Account" aria-expanded="false" aria-controls="authPanel" data-keep-mobile>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="12" cy="12" r="9"/>
-          <circle cx="12" cy="10" r="3"/>
-          <path d="M6 19c1.2-3 3.5-4 6-4s4.8 1 6 4"/>
-        </svg>
-      </button>
+      <div class="neo-auth" data-neo-auth data-keep-mobile hidden></div>
 
       <a class="header-home" href="https://neorgon.com/" title="neorgon.com" aria-label="Neorgon home">
         <svg class="nh-hub-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -100,19 +98,6 @@
     </div>
   </header>
 
-  <div class="auth-panel" id="authPanel">
-    <div class="auth-panel-inner">
-      <div id="authGate">
-        <p class="auth-hint">Sign in to send recognition.</p>
-        <button type="button" class="auth-submit" id="signInBtn">Sign in</button>
-      </div>
-      <div id="authUser" hidden>
-        <span class="auth-username" id="authUsername"></span>
-        <div id="neorgon-user-mount" class="neorgon-clerk-mount"></div>
-      </div>
-    </div>
-  </div>
-  <div class="auth-divider"></div>
 
   <main id="main">
     <div class="container stack">

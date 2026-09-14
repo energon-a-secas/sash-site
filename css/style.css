@@ -17,6 +17,10 @@
 :root {
   /* Per-site identity: set to this site's hub card accent (PROJECTS.md section 4) */
   --accent: #7c3aed;
+  /* base.css defaults --accent-bright to its own blue, which leaked into focus
+     rings, the skip link and primary-button hover. The violet above, one step
+     lighter: Violet-500. */
+  --accent-bright: #8b5cf6;
 
   /* Site extras base.css does not define */
   --surface-toast: #1a1730;
@@ -219,8 +223,8 @@ main#main {
  * Owned by the Neorgon Header Kit (css/neorgon-header.css, canonical
  * source: packages/neorgon-ui/header/). Do NOT style .header-bar,
  * .header-logo*, .header-title-link, .header-subtitle, .header-right,
- * .header-actions, or .header-home here. Auth styles (.auth-*) stay
- * site-owned below.
+ * .header-actions, or .header-home here. Sign-in is the Neorgon Auth Kit's
+ * (css/neorgon-auth.css): no .auth-* or .neo-auth-* rule lives here either.
  */
 nav {
   display: flex;
@@ -229,7 +233,7 @@ nav {
 }
 
 /* ── Buttons (canonical) ─────────────────────────────────────
- * Use .btn + a variant. Aliases: .nav-link = toolbar ghost; .auth-* map below.
+ * Use .btn + a variant. Alias: .nav-link = toolbar ghost.
  */
 .btn {
   display: inline-flex;
@@ -277,7 +281,7 @@ nav {
   color: #fff;
   border-color: transparent;
 }
-.btn--primary:hover { background: var(--accent-bright); }
+.btn--primary:hover { background: color-mix(in oklab, var(--accent) 86%, black); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-bright) 35%, transparent); } /* darker on hover keeps white text above 4.5:1; the bright shade alone measured 4.23:1 */
 .btn--secondary {
   background: var(--surface-2);
   color: var(--text-primary);
@@ -322,136 +326,6 @@ nav {
 .nav-link:hover {
   background: rgba(255,255,255,0.1);
   color: #fff;
-}
-
-.auth-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--control-height);
-  min-height: var(--control-height);
-  padding: 0;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: rgba(255,255,255,0.92);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background-color var(--dur), color var(--dur), border-color var(--dur);
-}
-.auth-toggle:hover {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-}
-.auth-toggle svg {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  display: block;
-}
-.auth-toggle.logged-in { color: var(--accent); }
-.auth-toggle.logged-in svg circle:nth-of-type(2) {
-  fill: currentColor;
-  stroke: none;
-}
-
-/* ── Sheet (inline panel under header), not a modal ──────────
- * Use for auth, filters, compact forms. No backdrop; page scrolls.
- * For blocking overlays use .modal below.
- */
-.auth-panel {
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid var(--border-subtle);
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-}
-.auth-panel.open { max-height: 300px; }
-.auth-panel-inner {
-  padding: var(--space-6);
-  max-width: 400px;
-  margin: 0 auto;
-}
-.auth-tabs {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-}
-.auth-tab {
-  flex: 1;
-  min-height: var(--control-height-sm);
-  padding: 0 var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  transition: background-color var(--dur), color var(--dur), border-color var(--dur);
-}
-.auth-tab.active {
-  background: var(--surface-2);
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-.auth-form input {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-1);
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-  font-family: inherit;
-}
-.auth-submit {
-  width: 100%;
-  min-height: var(--control-height);
-  padding: 0 var(--space-4);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: #fff;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: background-color var(--dur);
-}
-.auth-submit:hover { background: var(--accent-bright); }
-#authUser {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-.auth-username {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-.auth-logout {
-  min-height: var(--control-height-sm);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  transition: background-color var(--dur), color var(--dur), border-color var(--dur);
-}
-.auth-logout:hover {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-.auth-divider {
-  height: 1px;
-  background: var(--border-subtle);
 }
 
 /* ── Modal (blocking overlay) ──────────────────────────────── */
@@ -583,11 +457,7 @@ nav {
 /* ── Button press feedback ─────────────────────────────────── */
 button:active,
 .btn:active,
-.nav-link:active,
-.auth-toggle:active,
-.auth-tab:active,
-.auth-submit:active,
-.auth-logout:active {
+.nav-link:active {
   transform: scale(0.98);
   transition-duration: var(--dur-fast);
 }
@@ -703,8 +573,7 @@ button:active,
   margin: 0;
 }
 
-.sash-error,
-.auth-error {
+.sash-error {
   font-size: var(--text-sm);
   color: var(--danger);
   margin: var(--space-2) 0 0;

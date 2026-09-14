@@ -3,7 +3,7 @@
 // the vendored kit and a different file with the same basename: this one is
 // mine, that one is never edited here.
 
-import { state, q, m, loadPrefs, savePrefs, startAuth, openSignIn } from './state.js';
+import { state, q, m, loadPrefs, savePrefs, startAuth } from './state.js';
 import {
   renderSections, renderShowcase, renderCounts, countsOf,
   avatarNode, hasAvatar, bindCounter, setChip,
@@ -12,9 +12,13 @@ import { exportProfilePng, triggerDownload, slugify } from './insignia/export.js
 import { ensureFonts } from './insignia/render.js';
 import { HANDLE_RE } from './insignia/schema.js';
 import { randomSpec, readCharacter, specToCode } from './neorgon-avatar.js';
+import { NeoAuth } from './neorgon-auth.js';
 import { $, el, show, setError, showToast, walletGroup, GROUP_LABELS, plural } from './utils.js';
 
 const SHOWCASE_MAX = 24;
+
+/** The lede of the sign-in dialog when a write on this page asks for one. */
+const SIGN_IN_REASON = 'Sign in to see your wallet.';
 
 /** The avatar code being edited, before it is saved. */
 let draftAvatar = null;
@@ -32,17 +36,14 @@ export async function initWallet() {
   try {
     await startAuth((signedIn) => { void onSession(signedIn); });
   } catch (err) {
+    // The kit reports its own failures in its dialog; this is only for a
+    // throw before it got that far, and the page still has to leave "Loading".
     console.error('Sash: auth did not start', err);
-    setError($('authError'), 'Sign-in did not load. Reload the page to try again.');
     paintState(false);
   }
 }
 
 async function onSession(signedIn) {
-  $('authUsername').textContent = state.authLabel;
-  show($('authGate'), !signedIn);
-  show($('authUser'), signedIn);
-  $('authToggle').classList.toggle('logged-in', signedIn);
   if (!signedIn) {
     state.profile = null;
     state.awards = [];
@@ -159,8 +160,23 @@ function showcaseControls(award, place, total) {
 
 /* ── actions ────────────────────────────────────────────────── */
 
-export function signIn() {
-  if (!openSignIn()) setError($('authError'), 'Sign-in has not loaded yet. Try again in a moment.');
+/**
+ * The hero "Sign in to start" button. The kit's dialog is the only sign-in
+ * surface: on a host where clerk-js cannot load it says so inside the dialog,
+ * so there is nothing for this page to catch or to paint.
+ */
+export function signIn(event) {
+  void NeoAuth.openSignIn({ reason: SIGN_IN_REASON, invoker: event?.currentTarget });
+}
+
+/**
+ * True when there is a session to write with, asking for one otherwise. Every
+ * write below runs behind a control that is only drawn signed in, but a session
+ * can end between the paint and the press; the dialog is the answer to that,
+ * not a thrown "Not authenticated".
+ */
+function signedIn(invoker) {
+  return NeoAuth.requireSignIn({ reason: SIGN_IN_REASON, invoker });
 }
 
 export async function claimHandle(raw) {
@@ -171,6 +187,7 @@ export async function claimHandle(raw) {
     return;
   }
   setError(errorSlot, '');
+  if (!(await signedIn($('handleSubmit')))) return;
   $('handleSubmit').disabled = true;
   try {
     const out = await m.claimHandle(handle);
@@ -189,6 +206,7 @@ export async function saveProfile() {
   const errorSlot = $('profileError');
   setError(errorSlot, '');
   show($('profileSaved'), false);
+  if (!(await signedIn($('profileSave')))) return;
   $('profileSave').disabled = true;
   try {
     const out = await m.updateMine({
@@ -256,6 +274,7 @@ async function writeShowcase(next, undoMessage) {
 }
 
 export async function togglePin(publicId) {
+  if (!(await signedIn())) return;
   const list = [...(state.profile.showcase || [])];
   const at = list.indexOf(publicId);
   if (at >= 0) {
@@ -271,6 +290,7 @@ export async function togglePin(publicId) {
 }
 
 export async function moveShowcase(publicId, delta) {
+  if (!(await signedIn())) return;
   const list = [...(state.profile.showcase || [])];
   const at = list.indexOf(publicId);
   const to = at + delta;
@@ -284,6 +304,7 @@ export async function moveShowcase(publicId, delta) {
 export async function toggleHidden(publicId) {
   const award = state.awards.find((a) => a.publicId === publicId);
   if (!award) return;
+  if (!(await signedIn())) return;
   const next = !award.hidden;
   award.hidden = next;
   paintWallet();
@@ -351,7 +372,7 @@ export async function exportWallet() {
     // The exporter throws rather than shipping a picture in the wrong typeface
     // (C6.2). A silent fallback here would report success on a broken export.
     console.error('Sash: the export failed', err);
-    showToast('The picture could not be drawn. The console has the reason.');
+    showToast('The picture could not be drawn. Try again; if it keeps failing, use the report control in the bottom left corner.');
   } finally {
     button.disabled = false;
     button.textContent = label;

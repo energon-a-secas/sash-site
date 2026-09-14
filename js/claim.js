@@ -20,10 +20,13 @@
 import { framed } from './frame.js';
 import { convex, api } from './convex.js';
 import { renderSvg, ensureFonts } from './insignia/render.js';
+import { NeoAuth } from './neorgon-auth.js';
 import { el, humanMs, stamp } from './utils.js';
-import { initNeorgonClerkConvex, neorgonDisplayLabel } from './vendor/neorgon-auth.js';
 
 const TOKEN_RE = /^[0-9abcdefghjkmnpqrstvwxyz]{22}$/;      // C4.3
+
+/** The lede of the Auth Kit's dialog when this page asks for a sign-in. */
+const SIGN_IN_REASON = 'Sign in to claim this badge.';
 
 const stage = document.getElementById('stage');
 const disclosureLine = document.getElementById('disclosureLine');
@@ -180,18 +183,22 @@ function gateOf(preview, state) {
   gate.appendChild(el('h2', null, 'Claim it'));
   gate.appendChild(el('p', 'pc-who', 'Sash needs to know who to give it to, so this part needs an account.'));
 
-  const signIn = el('div', 'pc-signin');
-  signIn.id = 'signInHost';
-  gate.appendChild(signIn);
-
   const who = el('p', 'pc-who');
   who.id = 'who';
   who.hidden = true;
   gate.appendChild(who);
 
+  // Two buttons, one shown at a time once the session is known: the sign-in
+  // opens the Auth Kit's dialog and nothing else, and only the claim redeems.
   const actions = el('div', 'pg-actions');
+  const signIn = el('button', 'btn btn--primary', 'Sign in to claim it');
+  signIn.id = 'claimSignInBtn';
+  signIn.type = 'button';
+  signIn.hidden = true;
+  actions.appendChild(signIn);
   const button = el('button', 'btn btn--primary', 'Claim this badge');
   button.id = 'claimBtn';
+  button.type = 'button';
   button.hidden = true;
   actions.appendChild(button);
   gate.appendChild(actions);
@@ -263,6 +270,7 @@ function outcomeNode(result, preview) {
   return out;
 }
 
+/** Redeems once. Returns true when a second press could still change the answer. */
 async function redeem(button, outcome, preview) {
   button.disabled = true;
   outcome.replaceChildren(el('p', 'pg-note', 'Claiming.'));
@@ -276,7 +284,7 @@ async function redeem(button, outcome, preview) {
     outcome.replaceChildren(card('Sash could not tell who you are',
       'The session did not carry through to the claim. Sign in again and press the button once more.', 'bad'));
     button.disabled = false;
-    return;
+    return true;
   }
   outcome.replaceChildren(outcomeNode(result, preview));
 
@@ -289,64 +297,55 @@ async function redeem(button, outcome, preview) {
   const retryable = !!result && !result.ok && RETRYABLE.has(result.code);
   button.disabled = !retryable;
   button.hidden = !retryable;
+  return retryable;
 }
 
 /* ── auth wiring ────────────────────────────────────────────────────────────*/
 
 /**
- * Clerk's own widget, in this page's palette rather than its default light card.
- * The pattern and the variable names are `projects/buyhacks-site/js/events.js:89`,
- * the fleet's existing dark Clerk theme.
+ * The Auth Kit owns the sign-in: its dialog, in this site's palette, opens
+ * from the gate's own button and from the header slot alike. This page only
+ * decides which of its two buttons is on screen, and when redeem may run.
  *
- * These are literals rather than token reads because Clerk's widget lives in
- * its own shadow root and takes colours as JavaScript, not CSS. `colorPrimary`
- * and `colorText` are the values of --accent and --text-primary; the card's
- * background is deliberately one step lighter than --bg so the widget reads as
- * a panel on the page rather than a hole in it.
+ * C3.2 holds in two places. The session listener shows a button and never
+ * calls redeem, and the claim button asks the kit for a session before it
+ * redeems, so a press with a session that ended since the paint gets the
+ * dialog rather than a thrown "Not authenticated".
  */
-const CLERK_APPEARANCE = {
-  baseTheme: 'dark',
-  variables: {
-    colorPrimary: '#7c3aed',
-    colorBackground: '#0b1020',
-    colorInputBackground: 'rgba(255, 255, 255, 0.08)',
-    colorText: '#f9f9f9',
-    colorTextSecondary: 'rgba(202, 202, 202, 0.92)',
-    // Without these two the social button's label draws near-black on a dark
-    // card and "Continue with Google" is unreadable. Measured on the rendered
-    // widget, not inferred from the token names.
-    colorForeground: '#f9f9f9',
-    colorNeutral: 'rgba(255, 255, 255, 0.72)',
-    borderRadius: '10px',
-    fontFamily: "'Avenir Next', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  },
-};
-
 async function wireAuth(preview) {
   const button = document.getElementById('claimBtn');
+  const signIn = document.getElementById('claimSignInBtn');
   const outcome = document.getElementById('outcome');
   const who = document.getElementById('who');
   if (!button) return;
 
-  button.addEventListener('click', () => { redeem(button, outcome, preview); });
+  // Once an outcome is settled the claim button stays away, whatever the
+  // session does afterwards: signing out and back in must not offer a second
+  // seat on a stackable badge.
+  let settled = false;
+
+  signIn.addEventListener('click', (event) => {
+    void NeoAuth.requireSignIn({ reason: SIGN_IN_REASON, invoker: event.currentTarget });
+  });
+
+  button.addEventListener('click', async () => {
+    if (settled || button.disabled) return;
+    if (!(await NeoAuth.requireSignIn({ reason: SIGN_IN_REASON, invoker: button }))) return;
+    settled = !(await redeem(button, outcome, preview));
+  });
+
+  NeoAuth.onChange(({ signedIn, label }) => {
+    // C3.2. This handler shows a button. It never calls redeem.
+    signIn.hidden = signedIn;
+    who.hidden = !signedIn;
+    if (signedIn) who.textContent = `Signed in as ${label}.`;
+    if (!settled) button.hidden = !signedIn;
+  });
 
   try {
-    await initNeorgonClerkConvex({
-      convex,
-      publishableKey: document.querySelector('meta[name="clerk-publishable-key"]').content,
-      signInHost: '#signInHost',
-      userButtonHost: '#userButton',
-      clerkAppearance: CLERK_APPEARANCE,
-      signInProps: { appearance: CLERK_APPEARANCE },
-      onSession: ({ clerk, hasSession }) => {
-        // C3.2. This handler shows a button. It never calls redeem.
-        button.hidden = !hasSession;
-        who.hidden = !hasSession;
-        if (hasSession) who.textContent = `Signed in as ${neorgonDisplayLabel(clerk)}.`;
-      },
-    });
+    await NeoAuth.start({ convex });
   } catch (err) {
-    console.error('Sash: the sign-in could not be loaded', err);
+    console.error('Sash: the sign-in could not be started', err);
     outcome.replaceChildren(card('Sign-in could not load',
       'The badge above is real and the link is fine. Sash could not reach its sign-in service, so claiming has to wait.', 'bad'));
   }
@@ -373,6 +372,11 @@ function disclosureFor(preview) {
 
 async function main() {
   ensureFonts();
+  // The header slot is painted on every state of this page, dead links and
+  // bad addresses included: somebody signed in elsewhere on neorgon.com still
+  // sees their account here. Idempotent, so wireAuth's own start is the same
+  // call. With no session cookie the kit downloads nothing from Clerk.
+  NeoAuth.start({ convex }).catch((err) => console.error('Sash: the sign-in could not be started', err));
 
   if (!token) {
     disclosureLine.textContent = GENERIC_DISCLOSURE;

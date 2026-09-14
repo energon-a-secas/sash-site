@@ -1,0 +1,142 @@
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: "#0f172a"
+    primaryTextColor: "#e2e8f0"
+    primaryBorderColor: "#7c3aed"
+    lineColor: "#a78bfa"
+    secondaryColor: "#1e293b"
+    tertiaryColor: "#1e293b"
+    clusterBkg: "#f5f3ff"
+    clusterBorder: "#ddd6fe"
+    edgeLabelBackground: "#ede9fe"
+    mainBkg: "#0f172a"
+    nodeBorder: "#7c3aed"
+    titleColor: "#2e1065"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif"
+    fontSize: "13px"
+---
+flowchart TB
+    Holder([Holder, signed in]) --> Index
+    Holder --> ImportP
+    Holder --> SendP
+    Anyone([Anyone with a link]) --> U
+    Anyone --> Badge
+    Anyone --> Claim
+    Host([A third-party page]) -->|"iframe"| Embed
+
+    subgraph Pages["Pages (static HTML, no build, GitHub Pages)"]
+        Index["index.html\nMy wallet: pin, hide,\norder, claim a handle"]
+        U["u.html?h=handle\nPublic profile,\nno account needed"]
+        Badge["badge.html?id=publicId\nVerify one award"]
+        Claim["claim.html?t=token\nRedeem a claim link"]
+        Embed["embed.html?h=handle\nThe iframe widget:\nno Clerk, no header"]
+        ImportP["import.html\nImport a credential"]
+        SendP["send.html\nSend recognition"]
+        Policy["policy.html\nWhat a badge is,\nand is not"]
+        NotFound["404.html"]
+    end
+
+    subgraph Site["Site modules (js/, ES modules)"]
+        app["app.js\nEntry point, dispatches\non body data-page"]
+        frame["frame.js\nframed guard (A36):\nreturns before mount"]
+        state["state.js\nShared state, q / m\nwrappers, startAuth"]
+        events["events.js\nEvery listener\non both pages"]
+        wallet["wallet.js\nindex.html wiring:\nshowcase, export"]
+        profile["profile.js\nu.html wiring:\nshowcase strip"]
+        render["render.js\nProfile head, four\ngroups, showcase"]
+        badgejs["badge.js\nLookup, provenance,\ndegraded export"]
+        claimjs["claim.js\nPreview, sign in,\nredeem"]
+        embedjs["embed.js\nBare wall + snippet"]
+        importjs["import.js\nURL · JSON · baked\nPNG / SVG · manual"]
+        sendjs["send.js\nPick a template,\nsend kudos"]
+        utils["utils.js\nBadge helpers, el, $,\nstamp, humanMs"]
+        convexjs["convex.js\nConvexHttpClient +\nthe function-name map\n(the backend owns it)"]
+    end
+
+    subgraph Kits["Vendored kits (synced from packages/neorgon-ui, never edited here)"]
+        header["neorgon-header.js / .css\nHeader Kit + themes"]
+        footer["neorgon-footer.js / .css\nFooter Kit"]
+        beacon["neorgon-beacon.js / .css\nBeacon Kit"]
+        auth["neorgon-auth.js / .css\nAuth Kit: header slot,\nsign-in dialog, keeps the\nConvex client on the token"]
+        dom["neorgon-dom.js\nDOM Kit: escHtml, showToast,\ndebounce, copyText"]
+        avatar["neorgon-avatar.js\nAvatar Kit"]
+        insignia["js/insignia/\nInsignia Kit: render, export,\nwallet grid, certificate,\nschema, shapes, glyphs,\nopenbadges codec"]
+    end
+
+    Index --> app
+    U --> app
+    app --> frame
+    app --> state
+    app --> events
+    events --> wallet
+    events --> profile
+    wallet --> render
+    profile --> render
+    Badge --> badgejs
+    Claim --> claimjs
+    Embed --> embedjs
+    ImportP --> importjs
+    SendP --> sendjs
+    Policy --> frame
+    NotFound --> frame
+    badgejs & claimjs & importjs & sendjs --> frame
+
+    state --> convexjs
+    badgejs & claimjs & embedjs & importjs & sendjs --> convexjs
+    state --> auth
+    claimjs & importjs & sendjs --> auth
+    wallet & render --> avatar
+    wallet & profile & badgejs & embedjs & importjs & sendjs --> insignia
+    profile & embedjs & utils --> dom
+    Pages --> header & footer & beacon
+
+    insignia -->|"PNG · SVG · print sheet\nfonts and art inlined"| Files["Downloads\nwall, group, one award"]
+    insignia -.->|"font CSS + woff2\nat export time"| Fonts["fonts.googleapis.com\nfonts.gstatic.com"]
+
+    subgraph Convex["Convex production deployment: youthful-oyster-436 (one deployment, two origins)"]
+        fns["profiles · templates · versions\nclaims · awards · kudos · art\nimports · auth\nthe C2 query and mutation surface"]
+        rate["rate.ts\nsliding-window limiter,\neleven buckets"]
+        importFetch["importFetch.ts (use node)\nimports:fetchPreview\nresolve · reverify\nthree-host allowlist"]
+        ob["ob.ts (use node)\nob:credentialFor\nholder or admin only\nRS256 via node:crypto\nkid = ob/keys/1.json\nno key = degraded export"]
+        seed["seed.ts\nensureNeorgonTemplates\n(internal), 15 templates"]
+        crons["crons.ts\ndaily art:sweepOrphans"]
+        DB[("Database\nprofiles · templates\ntemplateVersions · awards\nclaims · kudos · rateEvents")]
+        Storage[("File storage\ntemplate art\nPNG / JPEG / WebP")]
+    end
+
+    convexjs -->|"POST /api/query\n/api/mutation · /api/action"| fns
+    convexjs -.->|"convex@1.21.0/browser"| Esm["esm.sh"]
+    fns --> rate
+    fns --> importFetch
+    fns --> ob
+    fns --> DB
+    fns --> Storage
+    rate --> DB
+    ob --> DB
+    seed --> DB
+    crons --> Storage
+
+    subgraph OB["Static Open Badges documents (sash.neorgon.com/ob/)"]
+        issuer["ob/issuer.json\nIssuer profile"]
+        key["ob/keys/1.json\nPublic JWK, the kid\nnever moves, never 404s,\nnever changes"]
+    end
+
+    ob -.->|"signs with OB_SIGNING_KEY\nheader kid names this URL"| key
+    Verifier([An Open Badges verifier]) -.->|"resolves kid and issuer"| key
+    Verifier -.-> issuer
+    importjs -.->|"unbakePng / unbakeSvg\nin the browser"| insignia
+
+    subgraph Outside["Outside services"]
+        Clerk["clerk.neorgon.com\nOne production Clerk instance\npk_live meta on every page\nbut embed.html"]
+        Credly["api.credly.com · www.credly.com\napi.badgr.io\nassertions and badge classes"]
+        Enamel["enamel.neorgon.com\nThe studio: writes templates\nand templateVersions through\nthe same deployment"]
+        CDN["cdn.neorgon.org\nbase.css tokens · season.css"]
+    end
+
+    auth -->|"clerk-js, JWT for\nthe convex audience"| Clerk
+    Convex -.->|"auth.config.ts:\nissuer clerk.neorgon.com"| Clerk
+    importFetch -->|"GET, 10 s timeout"| Credly
+    Enamel -->|"same function map"| fns
+    Pages --> CDN

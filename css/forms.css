@@ -237,14 +237,6 @@
   margin-top: var(--space-2);
 }
 
-.auth-hint {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  margin-bottom: var(--space-3);
-}
-
-.neorgon-clerk-mount { margin-top: var(--space-2); }
-
 /* ── preview (import.html and send.html) ───────────────────────── */
 
 .preview {

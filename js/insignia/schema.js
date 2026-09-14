@@ -13,6 +13,8 @@
  * a node test asserts the two lists are equal.
  */
 
+import { xmlSafe, hasControl } from './patterns.js';
+
 export const SCHEMA_VERSION = 1;
 
 /* ── C7 enums, exhaustive, lowercase, stored verbatim ──────────────────────── */
@@ -81,7 +83,7 @@ const ASPECT_TOLERANCE = 0.004;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const num = (v, dflt) => (typeof v === 'number' && Number.isFinite(v) ? v : dflt);
 const int = (v, dflt) => (typeof v === 'number' && Number.isInteger(v) ? v : dflt);
-const str = (v, dflt) => (typeof v === 'string' ? v : dflt);
+const str = (v, dflt) => (typeof v === 'string' ? xmlSafe(v) : dflt);   // strips what XML cannot hold
 const bool = (v, dflt) => (typeof v === 'boolean' ? v : dflt);
 const hex = (v, dflt) => (typeof v === 'string' && HEX_RE.test(v) ? v : dflt);
 const oneOf = (v, list, dflt) => (list.includes(v) ? v : dflt);
@@ -264,9 +266,7 @@ function normalizeCertificate(d) {
 /* ── validateDesign ────────────────────────────────────────────────────────── */
 
 const range = (out, label, v, lo, hi) => {
-  if (typeof v !== 'number' || !Number.isFinite(v) || v < lo || v > hi) {
-    out.push(`${label} must be a number between ${lo} and ${hi}, got ${JSON.stringify(v)}`);
-  }
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < lo || v > hi) out.push(`${label} must be a number between ${lo} and ${hi}, got ${JSON.stringify(v)}`);
 };
 const enumOf = (out, label, v, list) => {
   if (!list.includes(v)) out.push(`${label} must be one of ${list.join(', ')}, got ${JSON.stringify(v)}`);
@@ -277,6 +277,7 @@ const colour = (out, label, v) => {
 const maxLen = (out, label, v, n) => {
   if (typeof v !== 'string') out.push(`${label} must be a string`);
   else if ([...v].length > n) out.push(`${label} must be ${n} characters or fewer, got ${[...v].length}`);
+  else if (hasControl(v)) out.push(`${label} must not contain control characters: XML cannot hold them, so the export would fail`);
 };
 
 /** Returns an array of human-readable problems. Empty array means valid. */
@@ -393,6 +394,7 @@ function validateCertificate(d, out) {
     const v = t[k];
     if (!isObj(v)) { out.push(`text.${k} must be an object`); continue; }
     if (typeof v.value !== 'string') out.push(`text.${k}.value must be a string`);
+    else if (hasControl(v.value)) out.push(`text.${k}.value must not contain control characters: XML cannot hold them, so the export would fail`);
     enumOf(out, `text.${k}.font`, v.font, FONT_ROLES);
     range(out, `text.${k}.size`, v.size, 8, 200);
     colour(out, `text.${k}.color`, v.color);
@@ -400,6 +402,7 @@ function validateCertificate(d, out) {
   const sigs = Array.isArray(d.signatures) ? d.signatures : [];
   if (!Array.isArray(d.signatures)) out.push('signatures must be an array');
   if (sigs.length > 2) out.push(`signatures holds at most 2 items, got ${sigs.length}`);
+  sigs.forEach((s, i) => { if (isObj(s) && (hasControl(s.name) || hasControl(s.role))) out.push(`signatures[${i}] must not contain control characters`); });
   const ser = isObj(d.serial) ? d.serial : {};
   enumOf(out, 'serial.font', ser.font, FONT_ROLES);
   range(out, 'serial.size', ser.size, 8, 64);
@@ -483,10 +486,10 @@ export function provenanceLines(prov, kind) {
   const label = originLabel(prov.origin, kind);
   // An imported credential carries `issuerHandle: null` (A6). A null is drawn as
   // nothing at all, never as `@null` and never as a bare `@`.
-  const handle = typeof prov.issuerHandle === 'string' && prov.issuerHandle ? `@${prov.issuerHandle}` : '';
+  const handle = typeof prov.issuerHandle === 'string' && prov.issuerHandle ? `@${xmlSafe(prov.issuerHandle)}` : '';
   return {
     top: handle ? `${label}   ${handle}` : label,
-    bottom: prov.mode === 'preview' ? `${PREVIEW_URL}   ${PREVIEW_SERIAL}` : prov.verifyUrl,
+    bottom: prov.mode === 'preview' ? `${PREVIEW_URL}   ${PREVIEW_SERIAL}` : xmlSafe(prov.verifyUrl),
   };
 }
 

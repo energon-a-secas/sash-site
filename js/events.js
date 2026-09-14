@@ -7,28 +7,13 @@ import { $ } from './utils.js';
 import * as wallet from './wallet.js';
 import * as profile from './profile.js';
 
-/* ── the auth sheet, on both pages ──────────────────────────── */
-
-function bindAuth(signIn) {
-  const toggle = $('authToggle');
-  const panel = $('authPanel');
-
-  toggle?.addEventListener('click', () => {
-    // Signed out, Clerk's own dialog is the right surface: the sheet under the
-    // header is too small for the form. Signed in, the sheet holds the user
-    // button, so it opens as a sheet.
-    if ($('authUser')?.hasAttribute('hidden')) { signIn(); return; }
-    const open = panel.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  $('authSigninBtn')?.addEventListener('click', signIn);
-}
+// The header's account control is the Auth Kit's slot, wired by the kit itself.
+// Nothing here binds a sign-in sheet: the only site-owned sign-in control is
+// the hero button on index.html, and it opens the kit's dialog.
 
 /* ── index.html ─────────────────────────────────────────────── */
 
 export function bindWalletEvents() {
-  bindAuth(wallet.signIn);
   $('heroSigninBtn')?.addEventListener('click', wallet.signIn);
 
   $('handleForm')?.addEventListener('submit', (e) => {
@@ -85,8 +70,6 @@ export function bindWalletEvents() {
 /* ── u.html ─────────────────────────────────────────────────── */
 
 export function bindProfileEvents() {
-  bindAuth(profile.signIn);
-
   $('lookupForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
     profile.lookUp($('lookupHandle').value);

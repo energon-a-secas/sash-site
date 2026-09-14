@@ -73,8 +73,12 @@ function facts(rows) {
 
 function disclosureFor(award) {
   if (isImported(award)) {
-    const from = (award.importMeta && award.importMeta.issuerName) || 'another issuer';
-    return `This credential was issued by ${from} and imported into Sash by its holder. `
+    const from = award.importMeta && award.importMeta.issuerName;
+    // An import that names no issuer says so, in the words every other surface
+    // uses for the same absence, rather than inventing "another issuer".
+    return (from
+      ? `This credential was issued by ${from} and imported into Sash by its holder. `
+      : 'This credential was imported into Sash by its holder and its issuer is not stated. ')
       + 'Sash did not issue it and does not vouch for it.';
   }
   if (award.origin === 'neorgon') {
@@ -128,7 +132,8 @@ function artFor(award) {
     if (meta.imageUrl) {
       const img = el('img');
       img.src = meta.imageUrl;
-      img.alt = `${meta.name || award.name} from ${meta.issuerName || meta.provider || 'its issuer'}`;
+      const from = meta.issuerName || meta.provider;
+      img.alt = from ? `${meta.name || award.name} from ${from}` : `${meta.name || award.name}, issuer not stated`;
       img.loading = 'lazy';
       wrap.appendChild(img);
     }
@@ -336,13 +341,43 @@ function fail(title, body, tone) {
   stage.replaceChildren(card(title, body, tone));
 }
 
+/**
+ * The lookup the no-id state draws under its card, so a link that promises
+ * one (the 404 page's "Look up a credential") lands on one. A plain GET form:
+ * submitting it opens badge.html?id=<typed>, the same address a scanned link
+ * reaches, so the lookup and the verify page are one page and not two.
+ */
+function lookupForm() {
+  const form = el('form', 'pg-lookup');
+  form.method = 'get';
+  form.action = 'badge.html';
+  form.setAttribute('aria-label', 'Look up a credential');
+  const input = el('input');
+  input.type = 'text';
+  input.name = 'id';
+  input.placeholder = 'the ten character id';
+  input.maxLength = 10;
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.setAttribute('aria-label', 'Credential id');
+  const button = el('button', 'btn', 'Verify');
+  button.type = 'submit';
+  form.append(input, button);
+  return form;
+}
+
 async function main() {
   ensureFonts();
-  const id = new URLSearchParams(location.search).get('id') || '';
+  // C4.1's alphabet is lowercase because the id is read off paper and typed
+  // back in, and a person typing it back in may capitalise it. Fold the case
+  // before the test so a capitalised transcription is a lookup, not a lecture
+  // about the alphabet.
+  const id = (new URLSearchParams(location.search).get('id') || '').trim().toLowerCase();
 
   if (!id) {
     fail('This address needs a credential id',
-      'A Sash verify link looks like badge.html?id= followed by the ten character id printed on the badge.');
+      'A Sash verify link looks like badge.html?id= followed by the ten character id printed on the badge. Type one here to look it up.');
+    stage.firstElementChild.appendChild(lookupForm());
     return;
   }
   if (!PUBLIC_ID_RE.test(id)) {
