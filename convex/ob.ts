@@ -35,7 +35,7 @@ const RECIPIENT_SALT = "sash-v1";
  * sash.neorgon.com. It is a constant rather than an environment variable
  * because it is a property of the world, not of a deployment.
  */
-const ISSUER_URL_IS_LIVE = false;
+const ISSUER_URL_IS_LIVE = true;
 
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64")
