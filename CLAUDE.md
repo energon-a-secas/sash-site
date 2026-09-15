@@ -247,7 +247,7 @@ is untouched. Certificates were never affected; that plate is 1,548 wide.
 
 ## Contracts
 
-`docs/delivery/CONTRACTS.md` in the monorepo is the frozen source for the design
+`docs/delivery/archive/2026-09-09-sash-enamel/CONTRACTS.md` in the monorepo is the frozen source for the design
 document (C1), the Convex function surface (C2), ids and handles (C4), the embed
 (C5), exports (C6), the enums (C7), the deployment topology (C8), Open Badges
 (C9), provenance (C11), the page inventory and the CSP (C13). Section C15 holds
