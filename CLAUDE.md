@@ -11,7 +11,7 @@ make kill                               # stop the server on 8884
 npx convex dev --once                   # push convex/ to the dev deployment
 npx convex deploy                       # production, for anything the public touches
 npx convex run seed:ensureNeorgonTemplates
-npm test                                # enum, rate-limit and seed-idempotence checks
+npm test                                # enum, rate-limit, seed-idempotence, fetch-guard and blocklist-fold checks
 node convex/tests/contract-shapes.test.mjs   # not in `npm test`; needs a live deployment
 ```
 
@@ -108,7 +108,7 @@ copies of both. A `toLocaleDateString` anywhere in this repo is a regression.
 - `allAwards`: u.html only, the ungrouped wall from the first load, so the showcase survives a chip that narrows `awards` to one group.
 - `signedIn`, `authLabel`: the Auth Kit's settled state, mirrored by `startAuth`. Nothing else about the session is kept here; the kit holds it.
 - `group`: the chip filter, one of C7.22's `all | neorgon | community | recognition | imported`.
-- `showHidden`: the only value persisted, under `sash-prefs` in `localStorage`. Nothing about a person is stored in the browser.
+- `showHidden`, `lastSeenAt`: the two values persisted, under `sash-prefs` in `localStorage`. `lastSeenAt` is the newest `issuedAt` the last visit saw and drives the "New since you last looked" strip; `freshIds` is what the current visit found newer, settled once per load. Nothing about a person is stored in the browser.
 
 ## Gotchas
 

@@ -8,7 +8,9 @@
     "test:enums": "node convex/tests/enums.test.mjs",
     "test:limits": "node convex/tests/limits.test.mjs",
     "test:seed": "node convex/tests/seed-idempotence.test.mjs",
-    "test": "npm run test:enums && npm run test:limits && npm run test:seed"
+    "test:guard": "node convex/tests/fetchGuard.test.mjs",
+    "test:textfields": "node convex/tests/textfields.test.mjs",
+    "test": "npm run test:enums && npm run test:limits && npm run test:seed && npm run test:guard && npm run test:textfields"
   },
   "dependencies": {
     "convex": "^1.21.0"

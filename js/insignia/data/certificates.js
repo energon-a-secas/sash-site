@@ -12,6 +12,16 @@
  * each one sits high enough to clear the provenance band, which starts at
  * `size.h - (frame.inset + 26) - 96`.
  *
+ * Design round 2 (2026-09-15) gave six of them one of the security-print
+ * fields each, so the catalogue shows every new field somewhere and the rest
+ * draw as they shipped: `charter` a microtext border, a paper grain and the
+ * issuer's handle on its first signature rule; `red-team` the latent PARODY
+ * tone; `audit-trail` the issue stamp and the loud record block; `cold-print`
+ * a hatch ground with an ink-coloured grain; `violet-signal` the dense
+ * guilloche fading to a clear middle; `graphite` a sunburst. Every default is
+ * the drawing that shipped before its field existed, so the other six are
+ * byte for byte what they were.
+ *
  * Owned by D1. Vendored into `<site>/js/insignia/data/certificates.js`.
  */
 import { normalizeDesign } from '../schema.js';
@@ -48,10 +58,12 @@ const cert = ({ base, accent, ink, dim, body, background, frame, text, ...rest }
     body: { value: text.body || '', font: 'sans', size: 26, color: body },
     dateLabel: { value: 'issued', font: 'sans', size: 22, color: dim },
   },
-  serial: { show: true, font: 'mono', size: 20, color: dim },
+  serial: { show: true, font: 'mono', size: 20, color: dim, style: rest.serialStyle || 'quiet' },
   verify: { show: true, qr: true, size: 120 },
   signatures: rest.signatures || [],
   seal: rest.seal || { design: null, x: 0.5, y: 0.72, size: 200 },
+  // Off unless a preset asks; the kit's 0.24, 0.80, 180 are the defaults it fills.
+  stamp: rest.stamp || {},
 });
 
 export const CERTIFICATE_PRESETS = [
@@ -91,10 +103,10 @@ export const CERTIFICATE_PRESETS = [
   {
     id: 'red-team',
     name: 'Red Team',
-    note: 'Guilloche under crimson, single heavy rule. The most conventional layout here, in the least conventional colours.',
+    note: 'Guilloche under crimson, single heavy rule, the word PARODY latent in the paper at the kit\'s fixed four percent. The most conventional layout here, in the least conventional colours.',
     design: cert({
       base: '#120507', accent: '#ff2e63', ink: '#ffe9ee', dim: '#c98a99', body: '#f3c9d4',
-      background: { kind: 'guilloche', color: '#ff2e63', opacity: 0.22, scale: 1 },
+      background: { kind: 'guilloche', color: '#ff2e63', opacity: 0.22, scale: 1, latent: 'parody' },
       frame: { style: 'single', width: 12, color: '#ff2e63', inset: 46 },
       text: {
         eyebrow: 'ADVERSARY SIMULATION',
@@ -141,10 +153,10 @@ export const CERTIFICATE_PRESETS = [
   {
     id: 'violet-signal',
     name: 'Violet Signal',
-    note: 'The campaign palette on a certificate: violet guilloche, gold rule, embedded seal.',
+    note: 'The campaign palette on a certificate: violet guilloche fading to a clear middle so the words sit on plain ground, gold rule, embedded seal.',
     design: cert({
       base: '#0b1020', accent: '#7c3aed', ink: '#e7e9ff', dim: '#9aa3d0', body: '#c3c8ea',
-      background: { kind: 'guilloche', color: '#7c3aed', opacity: 0.22, scale: 1 },
+      background: { kind: 'guilloche', color: '#7c3aed', opacity: 0.22, scale: 1, fade: 0.5 },
       frame: { style: 'double', width: 14, color: '#7c3aed', inset: 42 },
       text: {
         eyebrow: 'CERTIFICATE OF',
@@ -157,10 +169,10 @@ export const CERTIFICATE_PRESETS = [
   {
     id: 'graphite',
     name: 'Graphite',
-    note: 'Light ground, near-black text, one red rule. For printing, and not beige.',
+    note: 'Light ground, near-black text, one red rule, a faint sunburst behind the title. For printing, and not beige.',
     design: cert({
       base: '#f2f3f5', accent: '#b3001b', ink: '#14171a', dim: '#5c646c', body: '#2c3238',
-      background: { kind: 'mesh', color: '#14171a', opacity: 0.07, scale: 1 },
+      background: { kind: 'sunburst', color: '#14171a', opacity: 0.07, scale: 1 },
       frame: { style: 'single', width: 8, color: '#b3001b', inset: 46 },
       text: {
         eyebrow: 'REVIEW BOARD',
@@ -174,10 +186,13 @@ export const CERTIFICATE_PRESETS = [
   {
     id: 'cold-print',
     name: 'Cold Print',
-    note: 'White ground with the fleet blue, faint guilloche, corner rules. The other print preset.',
+    note: 'White ground with the fleet blue, a faint hatched weave over an ink-coloured paper grain, corner rules. The other print preset.',
     design: cert({
-      base: '#ffffff', accent: '#0063e5', ink: '#0b1020', dim: '#5a6472', body: '#243040',
-      background: { kind: 'guilloche', color: '#0063e5', opacity: 0.1, scale: 1.1 },
+      // The dim slate was #5a6472 until the band was measured over the ink
+      // grain it now sits on (warnings.js bandWorst): 4.47:1 on the grained
+      // plate, so a shade darker to keep the shipped preset silent.
+      base: '#ffffff', accent: '#0063e5', ink: '#0b1020', dim: '#56606e', body: '#243040',
+      background: { kind: 'hatch', color: '#0063e5', opacity: 0.1, scale: 1.1, grain: 0.08 },
       frame: { style: 'corner', width: 6, color: '#0063e5', inset: 50 },
       text: {
         eyebrow: 'ON THE RECORD',
@@ -189,7 +204,7 @@ export const CERTIFICATE_PRESETS = [
   {
     id: 'audit-trail',
     name: 'Audit Trail',
-    note: 'Monochrome, no signal colour at all. Everything carried by the rules and the fixed-width serial.',
+    note: 'Monochrome, no signal colour at all. Everything carried by the rules, the fixed-width serial in its loud record block, and the issue stamp.',
     design: cert({
       base: '#0a0a0a', accent: '#d4d4d4', ink: '#fafafa', dim: '#8a8a8a', body: '#c4c4c4',
       background: { kind: 'tiles', color: '#ffffff', opacity: 0.08, scale: 1.4 },
@@ -202,24 +217,29 @@ export const CERTIFICATE_PRESETS = [
         holderFont: 'mono',
         body: 'Wrote down why, not only what.',
       },
+      // The record block (No., the serial, the QR in its crop marks, the dates)
+      // and the stamp at the kit's default place, which the band holds on the
+      // paper at about y 0.785 on a landscape page.
+      stamp: { show: true },
+      serialStyle: 'loud',
     }),
   },
   {
     id: 'charter',
     name: 'Charter',
-    note: 'The portrait preset. Gold rope rule on deep blue, seal set low, two signature rules.',
+    note: 'The portrait preset. Gold rope rule on deep blue with a microtext border inside it, a paper grain, seal set low, the issuer\'s handle on the first signature rule and a witness on the second.',
     design: cert({
       orientation: 'portrait',
       base: '#081226', accent: '#f5d67b', ink: '#f4efe1', dim: '#a8a48f', body: '#ded7c2',
-      background: { kind: 'guilloche', color: '#f5d67b', opacity: 0.16, scale: 0.9 },
-      frame: { style: 'rope', width: 12, color: '#f5d67b', inset: 56 },
+      background: { kind: 'guilloche', color: '#f5d67b', opacity: 0.16, scale: 0.9, grain: 0.06 },
+      frame: { style: 'rope', width: 12, color: '#f5d67b', inset: 56, microtext: true },
       text: {
         eyebrow: 'BY RESOLUTION OF THE FLEET',
         title: 'CHARTER MEMBER',
         titleSize: 76,
         body: 'Was here before there was anything to be here for.',
       },
-      signatures: [{ name: '', role: 'for the fleet' }, { name: '', role: 'witness' }],
+      signatures: [{ name: '', role: 'for the fleet', from: 'issuer' }, { name: '', role: 'witness' }],
       seal: { design: seal({ palette: { base: '#c8a24a', accent: '#2b1c05', ink: '#2b1c05', metal: 'gold' }, rings: [{ style: 'beaded', width: 8, color: '#2b1c05', inset: 10 }], centre: { kind: 'glyph', glyph: 'crown', color: '#2b1c05', scale: 1.2, dy: -30 } }), x: 0.5, y: 0.7, size: 220 },
     }),
   },

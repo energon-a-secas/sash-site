@@ -22,7 +22,9 @@
  * rather than as a watermark to remove.
  *
  * `MONO_ADV` and `fitMono` are exported for K3, whose microtext border and
- * record block fit JetBrains Mono lines by the same arithmetic.
+ * record block fit JetBrains Mono lines by the same arithmetic, and `fitSans`
+ * is the A51 table as a function, so the band's top line in cert-band.js is
+ * held to the width left of the record block the way this one is held to the plate.
  */
 import { svgEl, n } from './patterns.js';
 import { provenanceLines } from './provenance.js';
@@ -78,6 +80,26 @@ export function fitMono(text, { inner = STRIP_INNER, nominal = STRIP_SIZE, min =
   };
 }
 
+/**
+ * The size, tracking and pin for a Poppins 600 line that must fit `inner`
+ * units: `{ size, tracking, textLength }`. Size and tracking shrink together
+ * so the line keeps its proportions, down to `min`, past which `textLength`
+ * narrows the glyphs instead; `textLength` is null when the line already fits
+ * at `nominal`. A whitespace run is measured as one space, which is how SVG
+ * draws it. The string is never shortened.
+ */
+export function fitSans(text, { inner = STRIP_INNER, nominal = TOP_SIZE, tracking = TOP_TRACK, min = TOP_MIN } = {}) {
+  const line = String(text).replace(/\s+/g, ' ').trim();
+  let em = 0;
+  for (const ch of line) em += SANS_ADV.has(ch) ? SANS_ADV.get(ch) : SANS_MAX;
+  const fit = Math.min(1, inner / (em * nominal + tracking * line.length));
+  return {
+    size: Math.max(min, nominal * fit),
+    tracking: tracking * Math.max(min / nominal, fit),
+    textLength: fit < 1 ? inner : null,
+  };
+}
+
 /** The chamfered outline of a box, `c` cut off each corner. */
 function chamfered({ x, y, w, h, c }) {
   return `M${n(x + c)} ${n(y)} H${n(x + w - c)} L${n(x + w)} ${n(y + c)} V${n(y + h - c)} L${n(x + w - c)} ${n(y + h)} `
@@ -104,18 +126,12 @@ export function drawProvenance(stage, defs, d, prov) {
   // A51. The same fit as the line below, on a proportional face. The table decides
   // whether the string clears the plate; `textLength` is what holds it there
   // afterwards, on any face, including the fallback that draws when Poppins never
-  // loaded. Size and tracking shrink together so the line keeps its proportions,
-  // down to TOP_MIN, past which the glyphs narrow instead. A whitespace run draws
-  // as one space (SVG's default `xml:space`), so the label's three are measured as
-  // one. The string is never shortened: a cut handle resolves to no profile at all,
-  // which is the defect this fixes rather than a way of fixing it.
-  const top = String(lines.top).replace(/\s+/g, ' ').trim();
-  let em = 0;
-  for (const ch of top) em += SANS_ADV.has(ch) ? SANS_ADV.get(ch) : SANS_MAX;
-  const fit = Math.min(1, STRIP_INNER / (em * TOP_SIZE + TOP_TRACK * top.length));
+  // loaded. The string is never shortened: a cut handle resolves to no profile at
+  // all, which is the defect this fixes rather than a way of fixing it.
+  const top = fitSans(lines.top);
   stage.appendChild(textNode(lines.top, {
-    x: CX, y: STRIP_TOP + 26, role: 'sans', color: '#ffffff', textLength: fit < 1 ? STRIP_INNER : null,
-    size: Math.max(TOP_MIN, TOP_SIZE * fit), tracking: TOP_TRACK * Math.max(TOP_MIN / TOP_SIZE, fit),
+    x: CX, y: STRIP_TOP + 26, role: 'sans', color: '#ffffff', textLength: top.textLength,
+    size: top.size, tracking: top.tracking,
   }));
   const mono = fitMono(lines.bottom);
   stage.appendChild(textNode(lines.bottom, {

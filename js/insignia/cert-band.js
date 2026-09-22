@@ -32,13 +32,19 @@
  * `frame.microtext` is drawn by `security.js`, not here, and `bandGeometry`
  * is what that module keeps clear of.
  *
+ * The band's top line is fitted by `fitSans`, the strip's A51 table: quiet
+ * leaves it the width of the band, loud the width left of the serial on the
+ * same row, and the fit only pins a line that overflows, so a line that fits
+ * draws exactly as it did. A portrait page with a loud block and a handle
+ * past about twelve characters ran under the serial before this.
+ *
  * `textNode` and `qrNode` arrive as arguments, as they did before the split:
  * `render.js` hands the certificate its text primitive so both artefacts set
  * type through one function, and `qr.js` is the encoder.
  */
 import { svgEl, n, xmlSafe } from './patterns.js';
 import { provenanceLines, formatDate } from './provenance.js';
-import { fitMono, MONO_ADV } from './strip.js';
+import { fitMono, fitSans, MONO_ADV } from './strip.js';
 
 /** The frame named by `frame.style`. Appends to `root`; returns nothing. */
 export function drawFrame(root, defs, d) {
@@ -99,6 +105,9 @@ const QR_GAP = 24;                            // between the QR plate and the ba
 const CROP_GAP = 4, CROP_LEN = 10;            // a crop mark stands off the plate and is this long
 const VALID_UNTIL = 'valid until';
 const CAPTION_HOST = 'sash.neorgon.com';      // when the provenance carries no verify URL to read one from
+const TOP_SIZE = 26, TOP_TRACK = 1.5;        // the band's top line, as it shipped
+const TOP_MIN = 17;                           // 0.65 of nominal, the proportion the strip keeps
+const TOP_GAP = 24;                           // between the top line's end and the loud serial's start
 
 /** The host the verify URL names, without the scheme, or the fallback. */
 function hostOf(prov) {
@@ -237,9 +246,17 @@ export function drawBand(root, defs, d, prov, textNode, qrNode) {
 
   // One line, built once, in provenance.js. The badge strip and this band drew
   // the same string from two places until A14, which is how the certificate
-  // came to be labelled a badge on one of them and not the other.
+  // came to be labelled a badge on one of them and not the other. Its room is
+  // the band, less the loud serial that shares its row.
+  const loud = d.serial.style === 'loud';
+  const block = loud ? recordBlock(d, prov) : null;
+  const serialW = block && block.serial
+    ? (block.serial.textLength === null ? block.serial.text.length * MONO_ADV * block.serial.size : block.serial.textLength) : 0;
+  const right = w - pad - 24 - (serialW ? serialW + TOP_GAP : 0);
+  const fit = fitSans(lines.top, { inner: right - (pad + 24), nominal: TOP_SIZE, tracking: TOP_TRACK, min: TOP_MIN });
   root.appendChild(textNode(lines.top, {
-    x: pad + 24, y: top + 40, role: 'sans', size: 26, color: d.text.eyebrow.color, anchor: 'start', tracking: 1.5,
+    x: pad + 24, y: top + 40, role: 'sans', size: fit.size, color: d.text.eyebrow.color, anchor: 'start', tracking: fit.tracking,
+    textLength: fit.textLength,
   }));
   if (showVerify) {
     root.appendChild(textNode(lines.bottom, {
@@ -247,7 +264,7 @@ export function drawBand(root, defs, d, prov, textNode, qrNode) {
     }));
   }
 
-  if (d.serial.style === 'loud') {
+  if (loud) {
     drawRecordBlock(root, d, prov, textNode, qrNode);
     return;
   }

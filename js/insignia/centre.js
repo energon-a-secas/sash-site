@@ -18,8 +18,9 @@
  * an attribute appears only when the field is off its default:
  *
  *   style     glyph only: `line`, `bold` (stroke 2.6), `emboss` (a light copy
- *             at +3 +3 beneath), `duotone` (the same paths filled at 0.22
- *             under the stroke)
+ *             at +3 +3 beneath), `duotone` (the closed paths filled at 0.22
+ *             under the stroke; an open stroke marked `nofill` in glyphs.js
+ *             is drawn but not tinted, since a fill closes it on a chord)
  *   fit       image only: `cover` is `xMidYMid slice`, `contain` is `meet`
  *   mask      image only: `circle`, `rounded` (rx 0.18 side), `shape` (the
  *             silhouette scaled by side / 472 about the mark's centre), `none`

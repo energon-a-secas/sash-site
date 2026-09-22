@@ -78,7 +78,10 @@ export const RANDOM_POOLS = {
     'WITH WITNESSES', 'BY MORNING'],
   ribbons: ['2026', 'exit 0', 'SEV 1', 'day 400', 'v1', 'no meetings', 'p95'],
   arcFonts: ['display', 'slab', 'sans', 'mono', 'rounded'],
-  certBackgrounds: ['guilloche', 'topo', 'mesh', 'tiles'],
+  // Round 2 added sunburst, halftone and hatch. The sun is one page-size burst
+  // at full strength where the title sits, so it is an author's choice with a
+  // fade, not a draw.
+  certBackgrounds: ['guilloche', 'topo', 'mesh', 'tiles', 'halftone', 'hatch'],
   certFrames: ['single', 'double', 'rope', 'corner'],
 };
 
