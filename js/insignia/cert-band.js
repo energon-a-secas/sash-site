@@ -32,11 +32,16 @@
  * `frame.microtext` is drawn by `security.js`, not here, and `bandGeometry`
  * is what that module keeps clear of.
  *
- * The band's top line is fitted by `fitSans`, the strip's A51 table: quiet
- * leaves it the width of the band, loud the width left of the serial on the
- * same row, and the fit only pins a line that overflows, so a line that fits
- * draws exactly as it did. A portrait page with a loud block and a handle
- * past about twelve characters ran under the serial before this.
+ * Both provenance lines are fitted: the top line by `fitSans`, the strip's A51
+ * table, the bottom line by `fitMono`, the strip's A24 arithmetic. Quiet gives
+ * each the width of the band; loud gives each the width left of the record
+ * block, one gap short of its left edge, which `recordBlock` reports as
+ * `width`: the serial's fitted advance or the wider of the two date rows,
+ * whichever reaches further. A fit only pins a line that overflows, so a line
+ * that fits draws exactly as it did. A portrait page with a loud block and a
+ * handle past about twelve characters ran under the serial before the top
+ * line was fitted, and the 60-character preview URL line ran into the date
+ * table's label on the same page before the bottom line was (round 2, D3).
  *
  * `textNode` and `qrNode` arrive as arguments, as they did before the split:
  * `render.js` hands the certificate its text primitive so both artefacts set
@@ -107,7 +112,23 @@ const VALID_UNTIL = 'valid until';
 const CAPTION_HOST = 'sash.neorgon.com';      // when the provenance carries no verify URL to read one from
 const TOP_SIZE = 26, TOP_TRACK = 1.5;        // the band's top line, as it shipped
 const TOP_MIN = 17;                           // 0.65 of nominal, the proportion the strip keeps
-const TOP_GAP = 24;                           // between the top line's end and the loud serial's start
+const BOTTOM_SIZE = 22;                       // the band's bottom line, as it shipped
+const BOTTOM_MIN = 14;                        // 0.65 of nominal again, to the unit
+const BLOCK_GAP = 24;                         // between either line's end and the record block's left edge
+// The date label is the author's, in any of the six faces, and the block's
+// reach must never be under-reported, because the bottom line is fitted to what
+// is left of it. Measured 2026-09-22 in Chromium with each face loaded, per
+// character over A to Z, the widest run a label can average: Roboto Slab 0.699
+// em, Playfair Display 0.679, Nunito 0.676, Poppins 0.667; lowercase runs 0.53
+// to 0.58 and a real label ("issued", "date of completion") 0.45 to 0.51. Great
+// Vibes capitals average 0.970 and its lowercase 0.317, so the script role has
+// its own ceiling. An estimate that is high shortens the URL line by a little;
+// one that is low puts the line under the table, which is the defect.
+const LABEL_ADV = 0.7, LABEL_ADV_SCRIPT = 0.97;
+/** The per-character advance ceiling for a date label in `role`. */
+const labelAdvance = (role) => (role === 'mono' ? MONO_ADV : role === 'script' ? LABEL_ADV_SCRIPT : LABEL_ADV);
+/** A date row's value column is mono, so its width is arithmetic. */
+const valueWidth = (row) => row.value.length * MONO_ADV * ROW_SIZE;
 
 /** The host the verify URL names, without the scheme, or the fallback. */
 function hostOf(prov) {
@@ -119,10 +140,13 @@ function hostOf(prov) {
  * What the loud block draws, as data, read by `drawBand` and `bandRuns` alike:
  * `serial` (the fitted `No.` line, or null), `caption` (or null when there is
  * no QR to caption), `rows` (the date table, label and value, empty when the
- * award carries no date) and `qr` (whether the code is drawn). The flags
- * follow the quiet band's: at award time a `false` is ignored and the serial
- * and the code are drawn (C11.2); the code needs a verify URL, which a bare
- * preview provenance does not carry.
+ * award carries no date), `qr` (whether the code is drawn) and `width`, how
+ * far the block reaches into the band from its right end: the serial's fitted
+ * advance or the wider date row, label column included, whichever is more,
+ * and 0 when the band's end draws nothing. The QR and its caption sit above
+ * the band and are not in it. The flags follow the quiet band's: at award
+ * time a `false` is ignored and the serial and the code are drawn (C11.2);
+ * the code needs a verify URL, which a bare preview provenance does not carry.
  */
 export function recordBlock(d, prov) {
   const award = prov.mode === 'award';
@@ -139,7 +163,12 @@ export function recordBlock(d, prov) {
   const until = formatDate(prov.expiresAt);
   if (issued) rows.push({ label: d.text.dateLabel.value, value: issued });
   if (until) rows.push({ label: VALID_UNTIL, value: until });
-  return { serial, caption: qr ? `scan to verify, ${hostOf(prov)}` : null, rows, qr };
+  const adv = labelAdvance(d.text.dateLabel.font);
+  let width = serial ? (serial.textLength === null ? serial.text.length * MONO_ADV * serial.size : serial.textLength) : 0;
+  for (const row of rows) {
+    width = Math.max(width, valueWidth(row) + (row.label ? ROW_GAP + row.label.length * adv * ROW_SIZE : 0));
+  }
+  return { serial, caption: qr ? `scan to verify, ${hostOf(prov)}` : null, rows, qr, width };
 }
 
 /**
@@ -191,11 +220,10 @@ function drawRecordBlock(root, d, prov, textNode, qrNode) {
     const y = top + 64 + i * 20;
     root.appendChild(textNode(row.value, { x: right, y, role: 'mono', size: ROW_SIZE, color: d.text.body.color, anchor: 'end' }));
     if (row.label) {
-      // The value column is mono, so its width is arithmetic; the label sits
-      // one gap to its left and grows leftward, in the author's date-label face.
-      const valueW = row.value.length * MONO_ADV * ROW_SIZE;
+      // The label sits one gap left of the value column and grows leftward, in
+      // the author's date-label face; `recordBlock` counts its reach in `width`.
       root.appendChild(textNode(row.label, {
-        x: right - valueW - ROW_GAP, y, role: d.text.dateLabel.font, size: ROW_SIZE, color: d.text.dateLabel.color, anchor: 'end',
+        x: right - valueWidth(row) - ROW_GAP, y, role: d.text.dateLabel.font, size: ROW_SIZE, color: d.text.dateLabel.color, anchor: 'end',
       }));
     }
   });
@@ -244,23 +272,27 @@ export function drawBand(root, defs, d, prov, textNode, qrNode) {
     stroke: d.palette.accent, 'stroke-width': '2', 'stroke-opacity': '0.55',
   }));
 
-  // One line, built once, in provenance.js. The badge strip and this band drew
+  // Two lines, built once, in provenance.js. The badge strip and this band drew
   // the same string from two places until A14, which is how the certificate
-  // came to be labelled a badge on one of them and not the other. Its room is
-  // the band, less the loud serial that shares its row.
+  // came to be labelled a badge on one of them and not the other. Their room
+  // is the band, less the record block when the band is loud: the block is one
+  // rectangle at the right end, so both lines stop one gap short of its left
+  // edge, the top line under the serial's row and the bottom line under the
+  // date table's, whichever reaches further.
   const loud = d.serial.style === 'loud';
   const block = loud ? recordBlock(d, prov) : null;
-  const serialW = block && block.serial
-    ? (block.serial.textLength === null ? block.serial.text.length * MONO_ADV * block.serial.size : block.serial.textLength) : 0;
-  const right = w - pad - 24 - (serialW ? serialW + TOP_GAP : 0);
-  const fit = fitSans(lines.top, { inner: right - (pad + 24), nominal: TOP_SIZE, tracking: TOP_TRACK, min: TOP_MIN });
+  const reach = block && block.width ? block.width + BLOCK_GAP : 0;
+  const inner = w - pad - 24 - reach - (pad + 24);
+  const fit = fitSans(lines.top, { inner, nominal: TOP_SIZE, tracking: TOP_TRACK, min: TOP_MIN });
   root.appendChild(textNode(lines.top, {
     x: pad + 24, y: top + 40, role: 'sans', size: fit.size, color: d.text.eyebrow.color, anchor: 'start', tracking: fit.tracking,
     textLength: fit.textLength,
   }));
   if (showVerify) {
+    const mono = fitMono(lines.bottom, { inner, nominal: BOTTOM_SIZE, min: BOTTOM_MIN });
     root.appendChild(textNode(lines.bottom, {
-      x: pad + 24, y: top + 76, role: 'mono', size: 22, color: d.text.body.color, anchor: 'start',
+      x: pad + 24, y: top + 76, role: 'mono', size: mono.size, color: d.text.body.color, anchor: 'start',
+      textLength: mono.textLength,
     }));
   }
 

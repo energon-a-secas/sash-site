@@ -101,6 +101,6 @@ export function blockedMessage(term: string): string {
   return (
     `A Sash template cannot name ${term} as its issuer. ` +
     `The issuer of every Sash credential is Sash. ` +
-    `Put whatever you like in the description.`
+    `Take the name out, or say it another way.`
   );
 }
