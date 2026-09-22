@@ -870,3 +870,67 @@ button:active,
   opacity: 0.4;
   cursor: default;
 }
+
+/* ── new since you last looked (V5) ────────────────────────── */
+
+.sash-fresh {
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--accent);
+}
+
+/* ── the reveal (V5) ────────────────────────────────────────────
+   Keyframes on the kit's class hooks, scoped under a .pc-reveal parent that
+   js/reveal.js adds, so a badge on any other surface is untouched and an
+   export carries the hooks with no style attached. The order is the order
+   the kit draws: body, rings, centre, arcs, pips, ribbon, mark, finish, and
+   the provenance strip last, on the shortest settle, so no frame of the
+   reveal shows the achievement sharp and the disclosure still faint.
+
+   This block is byte-identical in css/public.css, which the claim page loads
+   for the claim moment. Two copies because the two pages share no stylesheet
+   of this site's own; change one, change both. */
+.pc-reveal .ins-body,
+.pc-reveal .ins-rings,
+.pc-reveal .ins-centre,
+.pc-reveal .ins-arc,
+.pc-reveal .ins-pips,
+.pc-reveal .ins-ribbon,
+.pc-reveal .ins-mark,
+.pc-reveal .ins-finish,
+.pc-reveal .ins-prov {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-duration: 480ms;
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+}
+
+.pc-reveal .ins-body   { animation-name: pc-fade;   animation-delay: 0ms;   animation-duration: 360ms; }
+.pc-reveal .ins-rings  { animation-name: pc-draw;   animation-delay: 140ms; animation-duration: 560ms; }
+.pc-reveal .ins-centre { animation-name: pc-pop;    animation-delay: 320ms; animation-duration: 560ms; }
+.pc-reveal .ins-arc    { animation-name: pc-fade;   animation-delay: 560ms; }
+.pc-reveal .ins-pips   { animation-name: pc-fade;   animation-delay: 640ms; }
+.pc-reveal .ins-ribbon { animation-name: pc-slide;  animation-delay: 700ms; }
+.pc-reveal .ins-mark,
+.pc-reveal .ins-finish { animation-name: pc-fade;   animation-delay: 760ms; }
+.pc-reveal .ins-prov   { animation-name: pc-settle; animation-delay: 980ms; animation-duration: 420ms; }
+
+@keyframes pc-fade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pc-draw   { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+@keyframes pc-pop    { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: none; } }
+@keyframes pc-slide  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pc-settle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Instant, not merely fast: no animation at all, so nothing is ever drawn
+   at opacity 0 waiting for a delay, and js/reveal.js resolves at once. */
+@media (prefers-reduced-motion: reduce) {
+  .pc-reveal .ins-body,
+  .pc-reveal .ins-rings,
+  .pc-reveal .ins-centre,
+  .pc-reveal .ins-arc,
+  .pc-reveal .ins-pips,
+  .pc-reveal .ins-ribbon,
+  .pc-reveal .ins-mark,
+  .pc-reveal .ins-finish,
+  .pc-reveal .ins-prov { animation: none; }
+}

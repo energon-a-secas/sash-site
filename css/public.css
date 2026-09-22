@@ -174,6 +174,14 @@ main {
 }
 .pv-art-import img { max-width: 240px; height: auto; border-radius: var(--radius); }
 
+/* Round 2, section 6: under an uploaded centre mark, the line that names who
+   uploaded it. Inside the art frame, so it travels with the picture on the
+   page the way the strip travels with the picture in the file. */
+.pv-art-credit {
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
 /* ── sections and facts ────────────────────────────────────────*/
 .pg-section {
   display: flex;
@@ -225,6 +233,16 @@ main {
 .pv-serial {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   letter-spacing: 0.04em;
+}
+
+/* V10. The credential as one sentence a reader can copy into a chat, a CV or
+   a search box. It ends with the verify URL, so the whole run is selectable
+   in one click and wraps rather than clipping the address. */
+.pv-plain {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  user-select: all;
+  -webkit-user-select: all;
 }
 
 .pg-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -393,6 +411,95 @@ main {
 }
 
 .pc-who { color: var(--text-secondary); font-size: var(--text-sm); }
+
+/* ── the claim reveal (V5) ─────────────────────────────────────
+   Keyframes on the kit's class hooks, scoped under a .pc-reveal parent that
+   js/reveal.js adds, so a badge on any other surface is untouched and an
+   export carries the hooks with no style attached. The order is the order
+   the kit draws: body, rings, centre, arcs, pips, ribbon, mark, finish, and
+   the provenance strip last, on the shortest settle, so no frame of the
+   reveal shows the achievement sharp and the disclosure still faint.
+
+   This block is byte-identical in css/style.css, which the wallet loads for
+   its "New since you last looked" strip. Two copies because the two pages
+   share no stylesheet of this site's own; change one, change both. */
+.pc-reveal-layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 720px) {
+  .pc-reveal-layout { grid-template-columns: minmax(280px, 440px) 1fr; }
+}
+
+.pc-reveal-frame {
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.pc-reveal-frame svg {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  display: block;
+}
+
+.pc-reveal-frame[data-kind="certificate"] svg { max-width: 720px; }
+
+.pc-reveal-count { font-weight: 600; }
+
+.pc-reveal-links a { color: var(--accent-bright); }
+
+.pc-reveal .ins-body,
+.pc-reveal .ins-rings,
+.pc-reveal .ins-centre,
+.pc-reveal .ins-arc,
+.pc-reveal .ins-pips,
+.pc-reveal .ins-ribbon,
+.pc-reveal .ins-mark,
+.pc-reveal .ins-finish,
+.pc-reveal .ins-prov {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-duration: 480ms;
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+}
+
+.pc-reveal .ins-body   { animation-name: pc-fade;   animation-delay: 0ms;   animation-duration: 360ms; }
+.pc-reveal .ins-rings  { animation-name: pc-draw;   animation-delay: 140ms; animation-duration: 560ms; }
+.pc-reveal .ins-centre { animation-name: pc-pop;    animation-delay: 320ms; animation-duration: 560ms; }
+.pc-reveal .ins-arc    { animation-name: pc-fade;   animation-delay: 560ms; }
+.pc-reveal .ins-pips   { animation-name: pc-fade;   animation-delay: 640ms; }
+.pc-reveal .ins-ribbon { animation-name: pc-slide;  animation-delay: 700ms; }
+.pc-reveal .ins-mark,
+.pc-reveal .ins-finish { animation-name: pc-fade;   animation-delay: 760ms; }
+.pc-reveal .ins-prov   { animation-name: pc-settle; animation-delay: 980ms; animation-duration: 420ms; }
+
+@keyframes pc-fade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pc-draw   { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+@keyframes pc-pop    { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: none; } }
+@keyframes pc-slide  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes pc-settle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Instant, not merely fast: no animation at all, so nothing is ever drawn
+   at opacity 0 waiting for a delay, and js/reveal.js resolves at once. */
+@media (prefers-reduced-motion: reduce) {
+  .pc-reveal .ins-body,
+  .pc-reveal .ins-rings,
+  .pc-reveal .ins-centre,
+  .pc-reveal .ins-arc,
+  .pc-reveal .ins-pips,
+  .pc-reveal .ins-ribbon,
+  .pc-reveal .ins-mark,
+  .pc-reveal .ins-finish,
+  .pc-reveal .ins-prov { animation: none; }
+}
 
 /* ── footer note ───────────────────────────────────────────────*/
 .pg-foot-note { font-size: var(--text-sm); color: var(--text-muted); }

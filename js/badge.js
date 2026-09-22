@@ -17,11 +17,17 @@
  * cannot be what removed it.
  *
  * No inline handlers: every listener is wired below.
+ *
+ * Design round 2 added two lines. V10's plain-text row: the credential as one
+ * sentence, built from the same PublicAward fields as the facts list and ending
+ * with the verify URL, the one thing a reader types back in. And section 6's
+ * credit under an uploaded centre mark, naming the handle that uploaded it,
+ * because Sash stores the file and did not choose it.
  */
 import { framed } from './frame.js';
 import { convex, api } from './convex.js';
 import { PUBLIC_ID_RE } from './insignia/schema.js';
-import { renderSvg, ensureFonts, setArtUrls } from './insignia/render.js';
+import { renderSvg, ensureFonts, setArtUrls, originLabel } from './insignia/render.js';
 import { provenanceOf, isImported } from './insignia/wallet.js';
 import { formatDate } from './insignia/certificate.js';
 import { exportPng, exportSvgFile, triggerDownload, slugify, printRoot } from './insignia/export.js';
@@ -142,9 +148,16 @@ function artFor(award) {
     return frame;
   }
 
-  setArtUrls(award.design.centre && award.design.centre.imageRef && award.artUrl
-    ? { [award.design.centre.imageRef]: award.artUrl } : {});
+  const centre = award.design.centre || {};
+  setArtUrls(centre.imageRef && award.artUrl ? { [centre.imageRef]: award.artUrl } : {});
   frame.appendChild(renderSvg(award.design, provenanceOf(award)));
+  if (centre.kind === 'image') {
+    // Round 2, section 6. The handle is the template owner's, which the award
+    // already carries; an import never reaches here (C11.4), so the line
+    // never names a provider's artwork as an upload.
+    const who = award.issuerHandle ? `@${award.issuerHandle}` : 'its issuer';
+    frame.appendChild(el('p', 'pg-note pv-art-credit', `Centre art uploaded by ${who}. Sash did not choose it.`));
+  }
   return frame;
 }
 
@@ -249,9 +262,9 @@ async function kudosSection(publicId) {
 
 /* ── the page ───────────────────────────────────────────────────────────────*/
 
-function copyControl(text) {
+function copyControl(text, className = 'pv-serial') {
   const wrap = el('span', 'pg-actions');
-  const value = el('span', 'pv-serial', text);
+  const value = el('span', className, text);
   const button = el('button', 'btn', 'Copy');
   button.addEventListener('click', async () => {
     try {
@@ -265,6 +278,35 @@ function copyControl(text) {
   wrap.appendChild(value);
   wrap.appendChild(button);
   return wrap;
+}
+
+/**
+ * V10. The credential as one sentence, from the same fields as the facts.
+ *
+ * It opens with the name and the origin, states who issued it to whom and
+ * when, carries the status where the status is not plain validity, and ends
+ * with the verify URL. A reader who pastes it anywhere pastes the way back.
+ */
+function plainText(award) {
+  const holder = award.holderHandle ? `@${award.holderHandle}` : 'a holder not stated';
+  const bits = [award.name || 'Untitled credential'];
+  if (isImported(award)) {
+    const meta = award.importMeta || {};
+    bits.push(`imported from ${meta.provider || 'elsewhere'}`);
+    bits.push(`issued by ${meta.issuerName || 'an issuer not stated'} to ${holder}`
+      + (formatDate(meta.issuedOn) ? ` on ${formatDate(meta.issuedOn)}` : ''));
+    if (formatDate(meta.expiresOn)) bits.push(`valid until ${formatDate(meta.expiresOn)}`);
+  } else {
+    bits.push(originLabel(award.origin, award.kind).toLowerCase());
+    bits.push(`issued by ${award.issuerHandle ? `@${award.issuerHandle}` : 'an issuer not stated'} to ${holder}`
+      + (formatDate(award.issuedAt) ? ` on ${formatDate(award.issuedAt)}` : ''));
+    if (award.status === 'revoked') bits.push(`revoked${formatDate(award.revokedAt) ? ` on ${formatDate(award.revokedAt)}` : ''}`);
+    else if (award.status === 'expired') bits.push(`expired${formatDate(award.expiresAt) ? ` on ${formatDate(award.expiresAt)}` : ''}`);
+    else if (formatDate(award.expiresAt)) bits.push(`valid until ${formatDate(award.expiresAt)}`);
+    if (award.count > 1) bits.push(`held ${award.count} times`);
+  }
+  bits.push(`verify at ${award.verifyUrl}`);
+  return bits.join(', ');
 }
 
 function detail(award) {
@@ -298,6 +340,7 @@ function detail(award) {
   if (award.evidenceUrl) rows.push(['Evidence', link(award.evidenceUrl, award.evidenceUrl, { blank: true })]);
   rows.push(['Public id', copyControl(award.publicId)]);
   rows.push(['Verify at', copyControl(award.verifyUrl)]);
+  rows.push(['Plain text', copyControl(plainText(award), 'pv-plain')]);
   return facts(rows);
 }
 

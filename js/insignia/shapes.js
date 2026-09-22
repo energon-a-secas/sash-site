@@ -71,15 +71,20 @@ export const SHAPES = {
     viewBox: SHAPE_VIEWBOX,
   },
 
-  // A twelve-lobed scalloped disc with two tails falling from beneath it.
+  // A twelve-lobed scalloped disc with two short tails falling from beneath it.
+  // Redrawn 2026-09-15 (design round 2): the disc's lobe tips reach radius 190
+  // about 256,210, so it spans y 20 to 400 and the top arc sits on the disc
+  // rather than across its scallops; the tails stop at y 430, above the
+  // provenance strip. The disc is the first subpath, which is the one a ring
+  // follows. Record: data/shape-catalogue.json.
   'ribbon-rosette': {
-    d: 'M256 36 A48.3 48.3 0 0 1 344 59.6 A48.3 48.3 0 0 1 408.4 124 '
-     + 'A48.3 48.3 0 0 1 432 212 A48.3 48.3 0 0 1 408.4 300 A48.3 48.3 0 0 1 344 364.4 '
-     + 'A48.3 48.3 0 0 1 256 388 A48.3 48.3 0 0 1 168 364.4 A48.3 48.3 0 0 1 103.6 300 '
-     + 'A48.3 48.3 0 0 1 80 212 A48.3 48.3 0 0 1 103.6 124 A48.3 48.3 0 0 1 168 59.6 '
-     + 'A48.3 48.3 0 0 1 256 36 Z '
-     + 'M222 356 L276 392 L228 498 L198 478 L156 500 Z '
-     + 'M356 500 L314 478 L284 498 L236 392 L290 356 Z',
+    d: 'M211.5 43.9 A53.4 53.4 0 0 1 300.5 43.9 A53.4 53.4 0 0 1 377.6 88.4 '
+     + 'A53.4 53.4 0 0 1 422.1 165.5 A53.4 53.4 0 0 1 422.1 254.5 A53.4 53.4 0 0 1 377.6 331.6 '
+     + 'A53.4 53.4 0 0 1 300.5 376.1 A53.4 53.4 0 0 1 211.5 376.1 A53.4 53.4 0 0 1 134.4 331.6 '
+     + 'A53.4 53.4 0 0 1 89.9 254.5 A53.4 53.4 0 0 1 89.9 165.5 A53.4 53.4 0 0 1 134.4 88.4 '
+     + 'A53.4 53.4 0 0 1 211.5 43.9 Z '
+     + 'M220 380 L266 380 L236 430 L206 416 L176 430 Z '
+     + 'M246 380 L292 380 L336 430 L306 416 L276 430 Z',
     viewBox: SHAPE_VIEWBOX,
   },
 

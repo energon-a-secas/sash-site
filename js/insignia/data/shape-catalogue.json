@@ -58,9 +58,17 @@
   "ribbon-rosette": {
     "author": "Neorgon fleet, insignia kit (workstream F1)",
     "createdAt": "2026-09-09",
-    "description": "A twelve-lobed scalloped disc of radius 176 centred at 256,212, each lobe an outward arc of radius 48.3, with two straight-edged tails falling from beneath it to a notched hem at y 500.",
+    "description": "A twelve-lobed scalloped disc centred at 256,210 whose lobe tips reach a radius of 190, so the disc spans y 20 to 400 and x 66 to 446: twelve outward arcs of radius 53.4 between endpoints spaced evenly on a circle of radius 172, with a lobe tip at the top, the foot and each side. Two straight-edged tails hang from beneath it, each 46 wide where it leaves the disc at y 380, splaying outward to a 60 wide notched hem at y 430, four units above the provenance strip. The disc is the first subpath. Bilaterally symmetric about x 256.",
     "method": "Hand-authored SVG path data, written from the description above. No reference image of any kind was open, nothing was traced or auto-traced, and no third-party icon set was used.",
-    "field": "512 by 512, a 20 unit margin, coordinates as written."
+    "field": "512 by 512, a 20 unit margin, coordinates as written.",
+    "redraws": [
+      {
+        "author": "Neorgon fleet, insignia kit (workstream D1, design round 2)",
+        "date": "2026-09-15",
+        "description": "A twelve-lobed scalloped disc centred at 256,210 whose lobe tips reach a radius of 190, so the disc spans y 20 to 400 and x 66 to 446: twelve outward arcs of radius 53.4 between endpoints spaced evenly on a circle of radius 172, with a lobe tip at the top, the foot and each side. Two straight-edged tails hang from beneath it, each 46 wide where it leaves the disc at y 380, splaying outward to a 60 wide notched hem at y 430, four units above the provenance strip. The disc is the first subpath. Bilaterally symmetric about x 256.",
+        "method": "Redrawn by hand from the description above, with the previous path closed and no reference image of any kind open; nothing was traced or auto-traced and no third-party icon set was used. The id is unchanged. The drawing it replaces was: A twelve-lobed scalloped disc of radius 176 centred at 256,212, each lobe an outward arc of radius 48.3, with two straight-edged tails falling from beneath it to a notched hem at y 500. That disc put the top arc across its scallops and its tails under the provenance strip, and a ring followed the tails."
+      }
+    ]
   },
   "rosette": {
     "author": "Neorgon fleet, insignia kit (workstream F1)",

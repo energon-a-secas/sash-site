@@ -36,13 +36,18 @@ export const SHAPE_IDS = [                                                      
   "ribbon-rosette", "rosette", "rounded-square", "shield", "star", "wave", "zigzag",
 ] as const;
 export const METALS = ["none", "gold", "silver", "bronze"] as const;                       // C7.9
-export const RING_STYLES = ["solid", "double", "dashed", "beaded", "rope"] as const;       // C7.10
-export const PATTERN_KINDS = [                                                             // C7.11
+// C7.10, widened in design round 2: `bevel` and `gear` are new ids; `rope` keeps
+// its id and changes its drawing.
+export const RING_STYLES = ["solid", "double", "dashed", "beaded", "rope", "bevel", "gear"] as const;
+export const PATTERN_KINDS = [                                                             // C7.11, widened in round 2
   "none", "stripes", "dots", "rays", "guilloche", "hexgrid", "circuit", "chevrons", "noise",
+  "sunburst", "halftone", "hatch",
 ] as const;
 export const PIP_STYLES = ["dot", "star", "bar"] as const;                                 // C7.12
 export const FONT_ROLES = ["display", "slab", "sans", "mono", "script", "rounded"] as const;  // C7.13
-export const CERT_BACKGROUNDS = ["plain", "guilloche", "topo", "mesh", "tiles"] as const;  // C7.15
+export const CERT_BACKGROUNDS = [                                                          // C7.15, widened in round 2
+  "plain", "guilloche", "topo", "mesh", "tiles", "sunburst", "halftone", "hatch",
+] as const;
 export const CERT_FRAMES = ["none", "single", "double", "rope", "corner"] as const;        // C7.16
 export const AWARD_SOURCES = ["claim", "sent", "earned", "import"] as const;               // C7.17
 export const AWARD_STATUSES = ["valid", "expired", "revoked"] as const;                    // C7.18
@@ -52,6 +57,19 @@ export const EXPORT_FORMATS = [                                                 
   "badge-png", "badge-svg", "certificate-png", "certificate-pdf", "profile-png", "group-png",
 ] as const;
 export const WALLET_GROUPS = ["all", "neorgon", "community", "recognition", "imported"] as const;  // C7.22
+
+// Design round 2, C7.23 to C7.31. The first member of each is the default and
+// draws what shipped before the field existed. Every one is optional on the
+// wire: this validator tolerates an absent field and refuses a wrong one.
+export const FINISH_KINDS = ["none", "bevel", "gloss", "facet"] as const;                  // C7.23
+export const CENTRE_STYLES = ["line", "bold", "emboss", "duotone"] as const;               // C7.24
+export const CENTRE_FITS = ["cover", "contain"] as const;                                  // C7.25
+export const CENTRE_MASKS = ["circle", "rounded", "shape", "none"] as const;               // C7.26
+export const CENTRE_PLATES = ["none", "solid", "metal"] as const;                          // C7.27
+export const CENTRE_TONES = ["full", "mono", "duotone"] as const;                          // C7.28
+export const CERT_LATENTS = ["none", "parody", "serial"] as const;                         // C7.29
+export const SIGNATURE_SOURCES = ["text", "issuer", "holder"] as const;                    // C7.30
+export const SERIAL_STYLES = ["quiet", "loud"] as const;                                   // C7.31
 
 export const CENTRE_KINDS = ["glyph", "image", "none"] as const;   // C1.1
 export const PROVENANCE_MODES = ["award", "preview"] as const;     // C1.3
@@ -117,6 +135,11 @@ function str(p: Problems, value: unknown, path: string, max: number, required: b
   if (CONTROL_RE.test(value)) p.push(`${path} must not contain control characters`);
 }
 
+function flag(p: Problems, value: unknown, path: string) {
+  if (value === undefined || value === null) return;
+  if (typeof value !== "boolean") p.push(`${path} must be a boolean`);
+}
+
 function member(p: Problems, value: unknown, path: string, list: readonly string[], required: boolean) {
   if (value === undefined || value === null) {
     if (required) p.push(`${path} is required`);
@@ -171,8 +194,16 @@ function validateBadge(p: Problems, d: Record<string, any>, path: string) {
     hex(p, d.pattern.color, `${path}pattern.color`, false);
     num(p, d.pattern.opacity, `${path}pattern.opacity`, 0, 1);
     num(p, d.pattern.scale, `${path}pattern.scale`, 0.25, 4);
+    num(p, d.pattern.fade, `${path}pattern.fade`, 0, 1);
   } else if (d.pattern !== undefined && d.pattern !== null) {
     p.push(`${path}pattern must be an object or null`);
+  }
+
+  if (isObj(d.finish)) {
+    member(p, d.finish.kind, `${path}finish.kind`, FINISH_KINDS, false);
+    num(p, d.finish.strength, `${path}finish.strength`, 0, 1);
+  } else if (d.finish !== undefined && d.finish !== null) {
+    p.push(`${path}finish must be an object`);
   }
 
   for (const slot of ["top", "bottom"]) {
@@ -208,6 +239,16 @@ function validateBadge(p: Problems, d: Record<string, any>, path: string) {
     hex(p, c.color, `${path}centre.color`, false);
     num(p, c.scale, `${path}centre.scale`, 0.2, 2);
     num(p, c.dy, `${path}centre.dy`, -128, 128);
+    num(p, c.dx, `${path}centre.dx`, -128, 128);
+    member(p, c.style, `${path}centre.style`, CENTRE_STYLES, false);
+    member(p, c.fit, `${path}centre.fit`, CENTRE_FITS, false);
+    member(p, c.mask, `${path}centre.mask`, CENTRE_MASKS, false);
+    member(p, c.plate, `${path}centre.plate`, CENTRE_PLATES, false);
+    hex(p, c.plateColor, `${path}centre.plateColor`, false);
+    member(p, c.tone, `${path}centre.tone`, CENTRE_TONES, false);
+    hex(p, c.toneColor, `${path}centre.toneColor`, false);
+    num(p, c.rotation, `${path}centre.rotation`, -180, 180);
+    num(p, c.opacity, `${path}centre.opacity`, 0, 1);
   } else if (d.centre !== undefined && d.centre !== null) {
     p.push(`${path}centre must be an object`);
   }
@@ -264,6 +305,9 @@ function validateCertificate(p: Problems, d: Record<string, any>) {
     hex(p, d.background.color, "background.color", false);
     num(p, d.background.opacity, "background.opacity", 0, 1);
     num(p, d.background.scale, "background.scale", 0.25, 4);
+    num(p, d.background.fade, "background.fade", 0, 1);
+    num(p, d.background.grain, "background.grain", 0, 0.2);
+    member(p, d.background.latent, "background.latent", CERT_LATENTS, false);
   }
 
   if (isObj(d.frame)) {
@@ -271,6 +315,7 @@ function validateCertificate(p: Problems, d: Record<string, any>) {
     num(p, d.frame.width, "frame.width", 0, 200);
     hex(p, d.frame.color, "frame.color", false);
     num(p, d.frame.inset, "frame.inset", 0, 200);
+    flag(p, d.frame.microtext, "frame.microtext");
   }
 
   if (isObj(d.seal)) {
@@ -288,6 +333,15 @@ function validateCertificate(p: Problems, d: Record<string, any>) {
         validateBadge(p, d.seal.design, "seal.design.");
       }
     }
+  }
+
+  if (isObj(d.stamp)) {
+    flag(p, d.stamp.show, "stamp.show");
+    num(p, d.stamp.x, "stamp.x", 0, 1);
+    num(p, d.stamp.y, "stamp.y", 0, 1);
+    num(p, d.stamp.size, "stamp.size", 100, 300);
+  } else if (d.stamp !== undefined && d.stamp !== null) {
+    p.push("stamp must be an object");
   }
 
   if (isObj(d.text)) {
@@ -309,6 +363,7 @@ function validateCertificate(p: Problems, d: Record<string, any>) {
         if (!isObj(s)) { p.push(`signatures[${i}] must be an object`); return; }
         str(p, s.name, `signatures[${i}].name`, 80, false);
         str(p, s.role, `signatures[${i}].role`, 80, false);
+        member(p, s.from, `signatures[${i}].from`, SIGNATURE_SOURCES, false);
       });
     }
   }
@@ -320,6 +375,7 @@ function validateCertificate(p: Problems, d: Record<string, any>) {
     member(p, d.serial.font, "serial.font", FONT_ROLES, false);
     num(p, d.serial.size, "serial.size", 6, 200);
     hex(p, d.serial.color, "serial.color", false);
+    member(p, d.serial.style, "serial.style", SERIAL_STYLES, false);
   }
 
   if (isObj(d.verify)) {
@@ -368,8 +424,12 @@ export function validateDesign(design: unknown): string[] {
 
 /**
  * Every author-supplied string in a design that the C11.3 blocklist inspects:
- * the arcs and the ribbon on a badge, every text block value on a certificate,
- * and the same again for an embedded seal.
+ * the arcs, the ribbon and the edition mark on a badge; every text block value
+ * and, since design round 2, every signature name and role on a certificate;
+ * and the same again for an embedded seal. The signature slot was the one
+ * free-text field the blocklist never saw, so a template already carrying a
+ * blocked signature name is refused on its next publish, which is the intended
+ * outcome.
  */
 export function designTextFields(design: unknown): string[] {
   const out: string[] = [];
@@ -384,6 +444,13 @@ export function designTextFields(design: unknown): string[] {
 
   if (isObj(design.text)) {
     for (const block of Object.values<any>(design.text)) push(block?.value);
+  }
+  if (Array.isArray(design.signatures)) {
+    for (const sig of design.signatures) {
+      if (!isObj(sig)) continue;
+      push(sig.name);
+      push(sig.role);
+    }
   }
   if (isObj(design.seal?.design)) out.push(...designTextFields(design.seal.design));
 

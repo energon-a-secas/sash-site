@@ -11,38 +11,27 @@
  * `projects/sash-site/convex/lib/design.ts` re-declares them because the Convex
  * runtime cannot import `packages/`; that duplication is deliberate (C2.10) and
  * a node test asserts the two lists are equal.
+ *
+ * Design round 2 (2026-09-15) moved the C7 lists to `enums.js` and the
+ * provenance wording and validator to `provenance.js`. Both are re-exported
+ * here in full, so every importer of this module reads what it always did.
+ * Every field the round added is optional, defaults to the value that
+ * reproduces the previous drawing, and is filled by `normalizeDesign`, which
+ * is what "additive" means and what the additivity test in
+ * `tests/insignia.test.mjs` proves.
  */
 
 import { xmlSafe, hasControl } from './patterns.js';
+import {
+  KINDS, ORIENTATIONS, SHAPE_IDS, METALS, RING_STYLES, PATTERN_KINDS, PIP_STYLES, FONT_ROLES,
+  CERT_BACKGROUNDS, CERT_FRAMES, CENTRE_KINDS, FINISH_KINDS, CENTRE_STYLES, CENTRE_FITS,
+  CENTRE_MASKS, CENTRE_PLATES, CENTRE_TONES, CERT_LATENTS, SIGNATURE_SOURCES, SERIAL_STYLES,
+} from './enums.js';
+
+export * from './enums.js';
+export * from './provenance.js';
 
 export const SCHEMA_VERSION = 1;
-
-/* ── C7 enums, exhaustive, lowercase, stored verbatim ──────────────────────── */
-
-export const KINDS = ['badge', 'certificate'];                                    // C7.1
-export const ORIGINS = ['neorgon', 'community', 'imported'];                      // C7.2, A6
-export const CATEGORIES = ['kt', 'course', 'challenge', 'fun', 'meme', 'recognition']; // C7.3
-export const SPHERES = ['work', 'fun', 'mindset'];                                // C7.4
-export const ACCESS_LEVELS = ['open', 'limited', 'private'];                      // C7.5
-export const VISIBILITIES = ['public', 'unlisted', 'private'];                    // C7.6
-export const TEMPLATE_STATUSES = ['draft', 'published', 'archived'];              // C7.6b
-export const ORIENTATIONS = ['landscape', 'portrait'];                            // C7.7
-
-// C7.8. Fifteen ids, one flat alphabetical list, no grouping and no ordering
-// (C12 DO #5). The naming rules in C12 are a legal-risk control: every id is a
-// plain geometric noun, and `tests/insignia.test.mjs` asserts each one against a
-// frozen reserved-name list.
-export const SHAPE_IDS = [
-  'circle', 'crescent', 'diamond', 'drop', 'flame', 'gem', 'hexagon', 'leaf',
-  'ribbon-rosette', 'rosette', 'rounded-square', 'shield', 'star', 'wave', 'zigzag',
-];
-
-export const METALS = ['none', 'gold', 'silver', 'bronze'];                       // C7.9
-export const RING_STYLES = ['solid', 'double', 'dashed', 'beaded', 'rope'];       // C7.10
-export const PATTERN_KINDS = ['none', 'stripes', 'dots', 'rays', 'guilloche',
-  'hexgrid', 'circuit', 'chevrons', 'noise'];                                     // C7.11
-export const PIP_STYLES = ['dot', 'star', 'bar'];                                 // C7.12
-export const FONT_ROLES = ['display', 'slab', 'sans', 'mono', 'script', 'rounded']; // C7.13
 
 // C7.14. A design stores the role, never the family: swapping a family is then a
 // kit change rather than a migration of every stored design.
@@ -55,23 +44,8 @@ export const FONT_FAMILIES = {
   rounded: { family: 'Nunito',           weight: 700, italic: false },
 };
 
-export const CERT_BACKGROUNDS = ['plain', 'guilloche', 'topo', 'mesh', 'tiles'];  // C7.15
-export const CERT_FRAMES = ['none', 'single', 'double', 'rope', 'corner'];        // C7.16
-export const AWARD_SOURCES = ['claim', 'sent', 'earned', 'import'];               // C7.17
-export const AWARD_STATUSES = ['valid', 'expired', 'revoked'];                    // C7.18
-export const IMPORT_PROVIDERS = ['credly', 'badgr', 'openbadges', 'manual'];      // C7.19
-export const IMPORT_DIALECTS = ['ob2-json', 'ob2-png', 'ob2-svg', 'ob3-jws', 'manual']; // C7.20
-export const EXPORT_FORMATS = ['badge-png', 'badge-svg', 'certificate-png',
-  'certificate-pdf', 'profile-png', 'group-png'];                                 // C7.21
-export const WALLET_GROUPS = ['all', 'neorgon', 'community', 'recognition', 'imported']; // C7.22
-
-export const CENTRE_KINDS = ['glyph', 'image', 'none'];
-export const PROVENANCE_MODES = ['award', 'preview'];
-
 export const HEX_RE = /^#[0-9a-f]{6}$/;
-export const PUBLIC_ID_RE = /^[0-9abcdefghjkmnpqrstvwxyz]{10}$/;                  // C4.1
 export const HANDLE_RE = /^[a-z0-9][a-z0-9-]{1,29}$/;                             // C4.2
-export const ISO_UTC_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 // ISO A series. Both certificate orientations hold it so print-to-PDF against A4
 // is exact; US Letter is 1.294 and letterboxes rather than stretching (R4 1.6).
@@ -124,9 +98,9 @@ function normalizeBadge(d) {
   const rings = Array.isArray(d.rings) ? d.rings : [];
   const pattern = isObj(d.pattern) ? d.pattern : {};
   const arcs = isObj(d.arcs) ? d.arcs : {};
-  const centre = isObj(d.centre) ? d.centre : {};
   const pips = isObj(d.pips) ? d.pips : {};
   const mark = isObj(d.mark) ? d.mark : {};
+  const finish = isObj(d.finish) ? d.finish : {};
 
   return {
     schemaVersion: int(d.schemaVersion, SCHEMA_VERSION),
@@ -145,16 +119,14 @@ function normalizeBadge(d) {
       color: hex(pattern.color, '#ffffff'),
       opacity: num(pattern.opacity, 0.15),
       scale: num(pattern.scale, 1),
+      fade: num(pattern.fade, 0),
+    },
+    finish: {
+      kind: oneOf(finish.kind, FINISH_KINDS, 'none'),
+      strength: num(finish.strength, 0.6),
     },
     arcs: { top: normArc(arcs.top), bottom: normArc(arcs.bottom) },
-    centre: {
-      kind: oneOf(centre.kind, CENTRE_KINDS, 'glyph'),
-      glyph: str(centre.glyph, 'star'),
-      imageRef: typeof centre.imageRef === 'string' ? centre.imageRef : null,
-      color: hex(centre.color, '#ffffff'),
-      scale: num(centre.scale, 1),
-      dy: num(centre.dy, 0),
-    },
+    centre: normCentre(d.centre, palette),
     ribbon: normRibbon(d.ribbon, palette),
     pips: {
       count: int(pips.count, 0),
@@ -167,6 +139,33 @@ function normalizeBadge(d) {
       year: typeof mark.year === 'number' ? int(mark.year, null) : null,
     },
     layers: Array.isArray(d.layers) ? d.layers : [],
+  };
+}
+
+// Round 2 (C1.1): every key after `dy` is new, and every default is the value
+// that draws what shipped before the key existed. `plateColor` follows the ink
+// and `toneColor` follows the glyph colour, both resolved here so a consumer
+// never sees a null.
+function normCentre(raw, palette) {
+  const c = isObj(raw) ? raw : {};
+  const color = hex(c.color, '#ffffff');
+  return {
+    kind: oneOf(c.kind, CENTRE_KINDS, 'glyph'),
+    glyph: str(c.glyph, 'star'),
+    imageRef: typeof c.imageRef === 'string' ? c.imageRef : null,
+    color,
+    scale: num(c.scale, 1),
+    dy: num(c.dy, 0),
+    dx: num(c.dx, 0),
+    style: oneOf(c.style, CENTRE_STYLES, 'line'),
+    fit: oneOf(c.fit, CENTRE_FITS, 'cover'),
+    mask: oneOf(c.mask, CENTRE_MASKS, 'circle'),
+    plate: oneOf(c.plate, CENTRE_PLATES, 'none'),
+    plateColor: hex(c.plateColor, palette.ink),
+    tone: oneOf(c.tone, CENTRE_TONES, 'full'),
+    toneColor: hex(c.toneColor, color),
+    rotation: num(c.rotation, 0),
+    opacity: num(c.opacity, 1),
   };
 }
 
@@ -213,6 +212,7 @@ function normalizeCertificate(d) {
   const bg = isObj(d.background) ? d.background : {};
   const frame = isObj(d.frame) ? d.frame : {};
   const seal = isObj(d.seal) ? d.seal : {};
+  const stamp = isObj(d.stamp) ? d.stamp : {};
   const text = isObj(d.text) ? d.text : {};
   const serial = isObj(d.serial) ? d.serial : {};
   const verify = isObj(d.verify) ? d.verify : {};
@@ -229,12 +229,16 @@ function normalizeCertificate(d) {
       color: hex(bg.color, palette.accent),
       opacity: num(bg.opacity, 0.2),
       scale: num(bg.scale, 1),
+      fade: num(bg.fade, 0),
+      grain: num(bg.grain, 0),
+      latent: oneOf(bg.latent, CERT_LATENTS, 'none'),
     },
     frame: {
       style: oneOf(frame.style, CERT_FRAMES, 'single'),
       width: num(frame.width, 12),
       color: hex(frame.color, palette.accent),
       inset: num(frame.inset, 40),
+      microtext: bool(frame.microtext, false),
     },
     seal: {
       design: isObj(seal.design) ? normalizeBadge(seal.design) : null,
@@ -242,15 +246,24 @@ function normalizeCertificate(d) {
       y: num(seal.y, 0.78),
       size: num(seal.size, 220),
     },
+    // Round 2 (C1.2). Off by default; every string it draws is provenance.
+    stamp: {
+      show: bool(stamp.show, false),
+      x: num(stamp.x, 0.24),
+      y: num(stamp.y, 0.80),
+      size: num(stamp.size, 180),
+    },
     text: {},
     signatures: sigs.filter(isObj).slice(0, 2).map((s) => ({
       name: str(s.name, ''), role: str(s.role, ''),
+      from: oneOf(s.from, SIGNATURE_SOURCES, 'text'),
     })),
     serial: {
       show: bool(serial.show, true),
       font: oneOf(serial.font, FONT_ROLES, 'mono'),
       size: num(serial.size, 20),
       color: hex(serial.color, '#9aa3d0'),
+      style: oneOf(serial.style, SERIAL_STYLES, 'quiet'),
     },
     verify: {
       show: bool(verify.show, true),
@@ -273,6 +286,9 @@ const enumOf = (out, label, v, list) => {
 };
 const colour = (out, label, v) => {
   if (!HEX_RE.test(String(v))) out.push(`${label} must be lowercase six-digit hex like #7c3aed, got ${JSON.stringify(v)}`);
+};
+const flag = (out, label, v) => {
+  if (typeof v !== 'boolean') out.push(`${label} must be a boolean, got ${JSON.stringify(v)}`);
 };
 const maxLen = (out, label, v, n) => {
   if (typeof v !== 'string') out.push(`${label} must be a string`);
@@ -319,6 +335,10 @@ function validateBadge(d, out) {
   colour(out, 'pattern.color', pat.color);
   range(out, 'pattern.opacity', pat.opacity, 0, 1);
   range(out, 'pattern.scale', pat.scale, 0.25, 4);
+  range(out, 'pattern.fade', pat.fade, 0, 1);
+  const fin = isObj(d.finish) ? d.finish : {};
+  enumOf(out, 'finish.kind', fin.kind, FINISH_KINDS);
+  range(out, 'finish.strength', fin.strength, 0, 1);
 
   const arcs = isObj(d.arcs) ? d.arcs : {};
   for (const side of ['top', 'bottom']) {
@@ -341,6 +361,16 @@ function validateBadge(d, out) {
   colour(out, 'centre.color', c.color);
   range(out, 'centre.scale', c.scale, 0.2, 2);
   range(out, 'centre.dy', c.dy, -128, 128);
+  range(out, 'centre.dx', c.dx, -128, 128);
+  enumOf(out, 'centre.style', c.style, CENTRE_STYLES);
+  enumOf(out, 'centre.fit', c.fit, CENTRE_FITS);
+  enumOf(out, 'centre.mask', c.mask, CENTRE_MASKS);
+  enumOf(out, 'centre.plate', c.plate, CENTRE_PLATES);
+  colour(out, 'centre.plateColor', c.plateColor);
+  enumOf(out, 'centre.tone', c.tone, CENTRE_TONES);
+  colour(out, 'centre.toneColor', c.toneColor);
+  range(out, 'centre.rotation', c.rotation, -180, 180);
+  range(out, 'centre.opacity', c.opacity, 0, 1);
 
   if (d.ribbon !== null && d.ribbon !== undefined) {
     if (!isObj(d.ribbon)) out.push('ribbon must be an object or null');
@@ -376,11 +406,15 @@ function validateCertificate(d, out) {
   colour(out, 'background.color', bg.color);
   range(out, 'background.opacity', bg.opacity, 0, 1);
   range(out, 'background.scale', bg.scale, 0.25, 4);
+  range(out, 'background.fade', bg.fade, 0, 1);
+  range(out, 'background.grain', bg.grain, 0, 0.2);
+  enumOf(out, 'background.latent', bg.latent, CERT_LATENTS);
   const f = isObj(d.frame) ? d.frame : {};
   enumOf(out, 'frame.style', f.style, CERT_FRAMES);
   range(out, 'frame.width', f.width, 1, 64);
   colour(out, 'frame.color', f.color);
   range(out, 'frame.inset', f.inset, 0, 200);
+  flag(out, 'frame.microtext', f.microtext);
   const s = isObj(d.seal) ? d.seal : {};
   range(out, 'seal.x', s.x, 0, 1);
   range(out, 'seal.y', s.y, 0, 1);
@@ -389,6 +423,11 @@ function validateCertificate(d, out) {
     if (!isObj(s.design)) out.push('seal.design must be a badge design document or null');
     else for (const problem of validateDesign(s.design)) out.push(`seal.design: ${problem}`);
   }
+  const st = isObj(d.stamp) ? d.stamp : {};
+  flag(out, 'stamp.show', st.show);
+  range(out, 'stamp.x', st.x, 0, 1);
+  range(out, 'stamp.y', st.y, 0, 1);
+  range(out, 'stamp.size', st.size, 100, 300);
   const t = isObj(d.text) ? d.text : {};
   for (const k of CERT_TEXT_KEYS) {
     const v = t[k];
@@ -402,95 +441,18 @@ function validateCertificate(d, out) {
   const sigs = Array.isArray(d.signatures) ? d.signatures : [];
   if (!Array.isArray(d.signatures)) out.push('signatures must be an array');
   if (sigs.length > 2) out.push(`signatures holds at most 2 items, got ${sigs.length}`);
-  sigs.forEach((s, i) => { if (isObj(s) && (hasControl(s.name) || hasControl(s.role))) out.push(`signatures[${i}] must not contain control characters`); });
+  sigs.forEach((sig, i) => {
+    if (!isObj(sig)) return;
+    if (hasControl(sig.name) || hasControl(sig.role)) out.push(`signatures[${i}] must not contain control characters`);
+    enumOf(out, `signatures[${i}].from`, sig.from, SIGNATURE_SOURCES);
+  });
   const ser = isObj(d.serial) ? d.serial : {};
   enumOf(out, 'serial.font', ser.font, FONT_ROLES);
   range(out, 'serial.size', ser.size, 8, 64);
   colour(out, 'serial.color', ser.color);
+  enumOf(out, 'serial.style', ser.style, SERIAL_STYLES);
   const ver = isObj(d.verify) ? d.verify : {};
   range(out, 'verify.size', ver.size, 60, 400);
-}
-
-/* ── provenance (C1.3), required at draw time ──────────────────────────────── */
-
-/** Returns an array of human-readable problems. Empty array means valid. */
-export function validateProvenance(prov) {
-  const out = [];
-  if (!isObj(prov)) return ['provenance is required at draw time and must be an object (C1.3)'];
-  enumOf(out, 'provenance.origin', prov.origin, ORIGINS);
-  enumOf(out, 'provenance.mode', prov.mode, PROVENANCE_MODES);
-  // A6. An imported credential was not issued here, so it has no Sash issuing
-  // handle: the value is null, never an empty string. Refusing the empty string
-  // is the point of the amendment, which traded five differently shaped empty
-  // values for one null.
-  if (prov.origin === 'imported') {
-    if (prov.issuerHandle !== null && prov.issuerHandle !== undefined) {
-      out.push('provenance.issuerHandle must be null when origin is imported: an import has no Sash issuer');
-    }
-  } else if (typeof prov.issuerHandle !== 'string' || !prov.issuerHandle) {
-    out.push('provenance.issuerHandle is required');
-  }
-  if (prov.origin === 'neorgon' && prov.issuerHandle !== 'neorgon') {
-    out.push('provenance.issuerHandle must be "neorgon" when origin is neorgon');
-  }
-  if (typeof prov.holder !== 'string') out.push('provenance.holder must be a string, empty when unknown');
-  const preview = prov.mode === 'preview';
-  if (typeof prov.serial !== 'string' || (!preview && !PUBLIC_ID_RE.test(prov.serial))) {
-    out.push('provenance.serial must be a 10-character public id, empty only in preview mode');
-  }
-  if (typeof prov.verifyUrl !== 'string' || (!preview && !/^https:\/\/\S+$/.test(prov.verifyUrl))) {
-    out.push('provenance.verifyUrl must be an absolute https URL, empty only in preview mode');
-  }
-  for (const k of ['issuedAt', 'expiresAt']) {
-    const v = prov[k];
-    if (v === null || v === undefined) continue;
-    if (typeof v !== 'string' || !ISO_UTC_RE.test(v)) out.push(`provenance.${k} must be ISO 8601 UTC with Z, or null`);
-  }
-  return out;
-}
-
-/* ── the provenance strings both the badge and the certificate draw ────────── */
-
-// C11.2. Frozen: the same three items appear on every artefact, so a reader who
-// has only the exported pixels can still see the origin, the issuing handle and
-// the verify URL.
-//
-// A14 amended what the first item says. The band names the artefact it is
-// stamped on, so a certificate reads COMMUNITY CERTIFICATE and never COMMUNITY
-// BADGE. The band is a legal-risk control before it is a design element, and one
-// that mislabels the object it is printed on argues against its own claim.
-export const ORIGIN_WORDS = { neorgon: 'NEORGON', community: 'COMMUNITY', imported: 'IMPORTED' };
-export const ARTEFACT_WORDS = { badge: 'BADGE', certificate: 'CERTIFICATE' };
-const PREVIEW_SERIAL = 'preview, not yet issued';
-const PREVIEW_URL = 'sash.neorgon.com/badge.html?id=...';
-
-/**
- * The origin word and the artefact word, as one string: `COMMUNITY CERTIFICATE`.
- *
- * It throws on a pair it has no wording for rather than picking one. The version
- * this replaced fell back to `COMMUNITY BADGE` for anything it did not know,
- * which is how a third origin would have been stamped with the label of the
- * second, and how a certificate came to be labelled a badge in the first place.
- */
-export function originLabel(origin, kind) {
-  const word = ORIGIN_WORDS[origin];
-  const artefact = ARTEFACT_WORDS[kind];
-  if (!word || !artefact) {
-    throw new TypeError(`no provenance wording for origin ${JSON.stringify(origin)} on a ${JSON.stringify(kind)} (C11.2)`);
-  }
-  return `${word} ${artefact}`;
-}
-
-/** The two lines of the provenance strip. Drawn in both modes, never optional. */
-export function provenanceLines(prov, kind) {
-  const label = originLabel(prov.origin, kind);
-  // An imported credential carries `issuerHandle: null` (A6). A null is drawn as
-  // nothing at all, never as `@null` and never as a bare `@`.
-  const handle = typeof prov.issuerHandle === 'string' && prov.issuerHandle ? `@${xmlSafe(prov.issuerHandle)}` : '';
-  return {
-    top: handle ? `${label}   ${handle}` : label,
-    bottom: prov.mode === 'preview' ? `${PREVIEW_URL}   ${PREVIEW_SERIAL}` : xmlSafe(prov.verifyUrl),
-  };
 }
 
 /** { width, height } in user units, from design.size. */

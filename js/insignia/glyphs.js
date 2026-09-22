@@ -46,7 +46,7 @@ export const GLYPHS = {
   "dice-5": [{ t: "rect", height: "18", rx: "2", ry: "2", width: "18", x: "3", y: "3" }, { t: "path", d: "M16 8h.01" }, { t: "path", d: "M8 8h.01" }, { t: "path", d: "M8 16h.01" }, { t: "path", d: "M16 16h.01" }, { t: "path", d: "M12 12h.01" }],
   "eye": [{ t: "path", d: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" }, { t: "circle", cx: "12", cy: "12", r: "3" }],
   "flame": [{ t: "path", d: "M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" }],
-  "gamepad-2": [{ t: "line",  }, { t: "line",  }, { t: "line",  }, { t: "line",  }, { t: "path", d: "M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" }],
+  "gamepad-2": [{ t: "line", x1: "6", y1: "11", x2: "10", y2: "11" }, { t: "line", x1: "8", y1: "9", x2: "8", y2: "13" }, { t: "line", x1: "15", y1: "12", x2: "15.01", y2: "12" }, { t: "line", x1: "18", y1: "10", x2: "18.01", y2: "10" }, { t: "path", d: "M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" }],
   "gem": [{ t: "path", d: "M10.5 3 8 9l4 13 4-13-2.5-6" }, { t: "path", d: "M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z" }, { t: "path", d: "M2 9h20" }],
   "hammer": [{ t: "path", d: "m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9" }, { t: "path", d: "m18 15 4-4" }, { t: "path", d: "m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" }],
   "handshake": [{ t: "path", d: "m11 17 2 2a1 1 0 1 0 3-3" }, { t: "path", d: "m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" }, { t: "path", d: "m21 3 1 11h-2" }, { t: "path", d: "M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" }, { t: "path", d: "M3 4h8" }],
@@ -68,15 +68,15 @@ export const GLYPHS = {
   "scroll": [{ t: "path", d: "M19 17V5a2 2 0 0 0-2-2H4" }, { t: "path", d: "M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" }],
   "shield": [{ t: "path", d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" }],
   "skull": [{ t: "path", d: "m12.5 17-.5-1-.5 1h1z" }, { t: "path", d: "M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z" }, { t: "circle", cx: "15", cy: "12", r: "1" }, { t: "circle", cx: "9", cy: "12", r: "1" }],
-  "smile": [{ t: "circle", cx: "12", cy: "12", r: "10" }, { t: "path", d: "M8 14s1.5 2 4 2 4-2 4-2" }, { t: "line",  }, { t: "line",  }],
+  "smile": [{ t: "circle", cx: "12", cy: "12", r: "10" }, { t: "path", d: "M8 14s1.5 2 4 2 4-2 4-2" }, { t: "line", x1: "9", y1: "9", x2: "9.01", y2: "9" }, { t: "line", x1: "15", y1: "9", x2: "15.01", y2: "9" }],
   "snowflake": [{ t: "path", d: "m10 20-1.25-2.5L6 18" }, { t: "path", d: "M10 4 8.75 6.5 6 6" }, { t: "path", d: "m14 20 1.25-2.5L18 18" }, { t: "path", d: "m14 4 1.25 2.5L18 6" }, { t: "path", d: "m17 21-3-6h-4" }, { t: "path", d: "m17 3-3 6 1.5 3" }, { t: "path", d: "M2 12h6.5L10 9" }, { t: "path", d: "m20 10-1.5 2 1.5 2" }, { t: "path", d: "M22 12h-6.5L14 15" }, { t: "path", d: "m4 10 1.5 2L4 14" }, { t: "path", d: "m7 21 3-6-1.5-3" }, { t: "path", d: "m7 3 3 6h4" }],
   "sparkles": [{ t: "path", d: "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" }, { t: "path", d: "M20 2v4" }, { t: "path", d: "M22 4h-4" }, { t: "circle", cx: "4", cy: "20", r: "2" }],
   "sprout": [{ t: "path", d: "M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3" }, { t: "path", d: "M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4" }, { t: "path", d: "M5 21h14" }],
   "star": [{ t: "path", d: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" }],
-  "swords": [{ t: "polyline", points: "14.5 17.5 3 6 3 3 6 3 17.5 14.5" }, { t: "line",  }, { t: "line",  }, { t: "line",  }, { t: "polyline", points: "14.5 6.5 18 3 21 3 21 6 17.5 9.5" }, { t: "line",  }, { t: "line",  }, { t: "line",  }],
+  "swords": [{ t: "polyline", points: "14.5 17.5 3 6 3 3 6 3 17.5 14.5" }, { t: "line", x1: "13", y1: "19", x2: "19", y2: "13" }, { t: "line", x1: "16", y1: "16", x2: "20", y2: "20" }, { t: "line", x1: "19", y1: "21", x2: "21", y2: "19" }, { t: "polyline", points: "14.5 6.5 18 3 21 3 21 6 17.5 9.5" }, { t: "line", x1: "5", y1: "14", x2: "9", y2: "18" }, { t: "line", x1: "7", y1: "17", x2: "4", y2: "20" }, { t: "line", x1: "3", y1: "19", x2: "5", y2: "21" }],
   "target": [{ t: "circle", cx: "12", cy: "12", r: "10" }, { t: "circle", cx: "12", cy: "12", r: "6" }, { t: "circle", cx: "12", cy: "12", r: "2" }],
   "telescope": [{ t: "path", d: "m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44" }, { t: "path", d: "m13.56 11.747 4.332-.924" }, { t: "path", d: "m16 21-3.105-6.21" }, { t: "path", d: "M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z" }, { t: "path", d: "m6.158 8.633 1.114 4.456" }, { t: "path", d: "m8 21 3.105-6.21" }, { t: "circle", cx: "12", cy: "13", r: "2" }],
-  "timer": [{ t: "line",  }, { t: "line",  }, { t: "circle", cx: "12", cy: "14", r: "8" }],
+  "timer": [{ t: "line", x1: "10", y1: "2", x2: "14", y2: "2" }, { t: "line", x1: "12", y1: "14", x2: "15", y2: "11" }, { t: "circle", cx: "12", cy: "14", r: "8" }],
   "trending-up": [{ t: "path", d: "M16 7h6v6" }, { t: "path", d: "m22 7-8.5 8.5-5-5L2 17" }],
   "trophy": [{ t: "path", d: "M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2" }, { t: "path", d: "M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2" }, { t: "path", d: "M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3" }, { t: "path", d: "M4 22h16" }, { t: "path", d: "M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" }, { t: "path", d: "M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3" }],
   "umbrella": [{ t: "path", d: "M12 13v7a2 2 0 0 0 4 0" }, { t: "path", d: "M12 2v2" }, { t: "path", d: "M20.992 13a1 1 0 0 0 .97-1.274 10.284 10.284 0 0 0-19.923 0A1 1 0 0 0 3 13z" }],
@@ -90,10 +90,54 @@ export const GLYPHS = {
 export const GLYPH_LIST = Object.keys(GLYPHS).sort();
 
 /**
+ * The attributes each primitive must carry to draw. Fourteen `line` parts in
+ * four glyphs (gamepad-2, smile, swords, timer) once carried none: each drew a
+ * zero-length line at 0,0, a stray dot with a round cap, and the glyph lost
+ * its sticks, its eyes, its stem or its second blade. Repaired 2026-09-15 from
+ * the cardforge origin; `glyphProblems` is the check that would have caught it.
+ */
+export const REQUIRED_ATTRS = Object.freeze({
+  path: ['d'], line: ['x1', 'y1', 'x2', 'y2'], circle: ['cx', 'cy', 'r'],
+  rect: ['x', 'y', 'width', 'height'], polyline: ['points'], polygon: ['points'],
+  ellipse: ['cx', 'cy', 'rx', 'ry'],
+});
+
+/**
+ * Every part in `registry` that cannot draw: an unknown primitive, or one
+ * missing an attribute `REQUIRED_ATTRS` names. Empty when the registry is
+ * whole, which is what the kit tests assert.
+ */
+export function glyphProblems(registry = GLYPHS) {
+  const out = [];
+  for (const [id, parts] of Object.entries(registry)) {
+    parts.forEach((p, i) => {
+      const need = REQUIRED_ATTRS[p.t];
+      if (!need) { out.push(`${id}[${i}]: unknown primitive ${String(p.t)}`); return; }
+      const missing = need.filter((a) => !(a in p) || p[a] === '' || p[a] === undefined);
+      if (missing.length) out.push(`${id}[${i}]: ${p.t} without ${missing.join(' ')}`);
+    });
+  }
+  return out;
+}
+
+// The palette glyph's four dots are `fill: "currentColor"` in Lucide, which is
+// the page colour on a page and black inside an `<img>`, where an SVG has no
+// page. Resolved here to the glyph colour, so the export draws the dots the
+// preview shows. Nothing else in the registry names a colour.
+function build(parts, color) {
+  return parts.map((p) => {
+    const { t, ...attrs } = p;
+    if (attrs.fill === 'currentColor') attrs.fill = color;
+    return svgEl(t, attrs);
+  });
+}
+
+/**
  * A `<g>` holding one glyph, drawn in Lucide's stroke style at its native
  * 24 by 24 size. The caller positions and scales it with a transform.
  * Returns null for an unknown id: an unknown glyph draws nothing rather than
- * substituting a different one.
+ * substituting a different one. `strokeWidth` 2 is the line style; `bold`
+ * passes 2.6.
  */
 export function glyphNode(id, { color = '#ffffff', strokeWidth = 2 } = {}) {
   const parts = GLYPHS[id];
@@ -104,8 +148,16 @@ export function glyphNode(id, { color = '#ffffff', strokeWidth = 2 } = {}) {
     'stroke-width': String(strokeWidth),
     'stroke-linecap': 'round',
     'stroke-linejoin': 'round',
-  }, parts.map((p) => {
-    const { t, ...attrs } = p;
-    return svgEl(t, attrs);
-  }));
+  }, build(parts, color));
+}
+
+/**
+ * The same primitives as a fill with no stroke: the tint the `duotone` centre
+ * style lays under the line copy. A browser closes an open subpath to fill it,
+ * so a Lucide outline becomes its own silhouette. Null for an unknown id.
+ */
+export function glyphFillNode(id, { color = '#ffffff', opacity = 0.22 } = {}) {
+  const parts = GLYPHS[id];
+  if (!parts) return null;
+  return svgEl('g', { fill: color, 'fill-opacity': String(opacity), stroke: 'none' }, build(parts, color));
 }

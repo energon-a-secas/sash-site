@@ -10,6 +10,8 @@ import {
 } from './render.js';
 import { exportProfilePng, triggerDownload, slugify } from './insignia/export.js';
 import { ensureFonts } from './insignia/render.js';
+import { renderAwardGrid } from './insignia/wallet.js';
+import { reveal } from './reveal.js';
 import { HANDLE_RE } from './insignia/schema.js';
 import { randomSpec, readCharacter, specToCode } from './neorgon-avatar.js';
 import { NeoAuth } from './neorgon-auth.js';
@@ -47,6 +49,7 @@ async function onSession(signedIn) {
   if (!signedIn) {
     state.profile = null;
     state.awards = [];
+    state.freshIds = null;          // another account in the same load starts its own count
     paintState(false);
     return;
   }
@@ -59,11 +62,41 @@ export async function refresh() {
     state.profile = await q.me();
     state.awards = state.profile ? await q.mine() : [];
     setError($('pageError'), '');
+    noteFresh();
   } catch (err) {
     console.error('Sash: could not load the wallet', err);
     setError($('pageError'), 'Sash could not load your wallet. Reload the page to try again.');
   }
   paintState(true);
+}
+
+/**
+ * V5. Which awards arrived since this browser last looked, settled once per
+ * visit, then the high-water mark moves.
+ *
+ * "Since you last looked" is measured against the newest issuedAt the previous
+ * visit saw, never against a clock: nothing issued at or before that mark can
+ * arrive later, and nothing issued after it was on the wall then, so neither
+ * side's clock can make an old badge new or a new one old. The first visit
+ * finds nothing new, so a person opening the wallet for the first time is not
+ * told every badge is new, and sets the mark to the newest badge on the wall,
+ * or to the epoch when the wall is empty, so whatever comes next is new. A
+ * refresh after a write in the same visit keeps the list it already has, which
+ * is what makes the strip stay through a pin and vanish on the next visit.
+ */
+function noteFresh() {
+  if (state.freshIds !== null) return;
+  const seen = state.lastSeenAt ? Date.parse(state.lastSeenAt) : NaN;
+  const known = Number.isFinite(seen);
+  const fresh = known ? state.awards.filter((a) => Date.parse(a.issuedAt) > seen) : [];
+  state.freshIds = fresh.map((a) => a.publicId);
+  let newest = known ? seen : 0;
+  for (const award of state.awards) {
+    const at = Date.parse(award.issuedAt);
+    if (at > newest) newest = at;
+  }
+  state.lastSeenAt = new Date(newest).toISOString();
+  savePrefs();
 }
 
 function paintState(signedIn) {
@@ -95,6 +128,7 @@ function paintWallet() {
     ? `${plural(state.awards.length, 'badge', 'badges')}, ${hiddenCount} hidden.`
     : plural(state.awards.length, 'badge', 'badges');
 
+  paintFresh();
   renderShowcase($('showcaseList'), p.showcase || [], state.awards, showcaseControls);
   renderSections($('awardSections'), visible, {
     filter: state.group,
@@ -103,6 +137,44 @@ function paintWallet() {
       ? 'No badges yet. Claim one from a link, or send recognition to somebody else.'
       : `Nothing in ${GROUP_LABELS[state.group]} yet.`,
   });
+}
+
+/**
+ * The "New since you last looked" strip, above the showcase, drawn only while
+ * the visit that found something new lasts. The grid is the kit's, the same
+ * cards as the wall below, and the reveal is js/reveal.js's, run once: a
+ * repaint after a pin or a hide rebuilds the strip without replaying it.
+ * index.html carries no slot for it, so the section is made here and put
+ * before the showcase, and removed again when nothing in it is left visible.
+ */
+function paintFresh() {
+  const ids = state.freshIds || [];
+  const fresh = state.awards.filter((a) => ids.includes(a.publicId) && (state.showHidden || !a.hidden));
+  const old = document.getElementById('newSince');
+  if (old) old.remove();
+  if (!fresh.length) return;
+
+  const section = el('section', 'section sash-fresh');
+  section.id = 'newSince';
+  section.setAttribute('aria-labelledby', 'newSinceTitle');
+  const titles = el('div', 'section__titles');
+  const title = el('h2', 'section__title', 'New since you last looked');
+  title.id = 'newSinceTitle';
+  titles.appendChild(title);
+  titles.appendChild(el('p', 'section__lead',
+    `${plural(fresh.length, 'badge', 'badges')} arrived since your last visit. ${fresh.length === 1 ? 'It is' : 'They are'} on your wall below too.`));
+  section.appendChild(titles);
+
+  const grid = renderAwardGrid(fresh, { size: 180, groupBy: 'none' });
+  section.appendChild(grid);
+  $('showcaseSection').before(section);
+
+  if (!state.freshRevealed) {
+    state.freshRevealed = true;
+    void reveal(grid);
+  } else {
+    grid.classList.add('is-settled');
+  }
 }
 
 function fillForm(p) {

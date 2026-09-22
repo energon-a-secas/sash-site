@@ -102,6 +102,11 @@ export function renderAwardCard(award, opts = {}) {
   if (artWrap.tagName === 'A') {
     artWrap.href = href;
     if (imported) { artWrap.target = '_blank'; artWrap.rel = 'noopener'; }
+    // V10 (round 2, section 6): the link is named with the disclosure before
+    // the achievement, the order the strip draws, rather than by the image title.
+    artWrap.setAttribute('aria-label', imported
+      ? `${award.name}, imported from ${(award.importMeta && award.importMeta.provider) || 'elsewhere'}`
+      : `${award.name}, ${award.origin} ${award.kind}${award.issuerHandle ? ` by @${award.issuerHandle}` : ''}`);
   }
   artWrap.style.setProperty('--ins-card-size', `${size}px`);
 

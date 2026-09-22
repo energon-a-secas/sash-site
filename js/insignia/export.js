@@ -96,14 +96,20 @@ const FIELD_LABELS = {
   'text.issuerLine': 'issuer line', 'text.dateLabel': 'date line', 'profile.displayName': 'profile name',
   'profile.handle': 'handle', 'profile.headline': 'headline', 'award.name': 'award name',
   'import.line': 'imported credential line', 'poster.footer': 'poster footer',
+  // Round 2: the security print (security.js) and the resolved signatures.
+  'frame.microtext': 'microtext border', 'background.latent': 'latent word', stamp: 'issue stamp',
 };
 
-/** `seal.arcs.top` reads as "seal top arc words", `signatures[1].name` as "signature 2 name". */
+/**
+ * `seal.arcs.top` reads as "seal top arc words", `signatures[1].name` as
+ * "signature 2 name", and `signatures[0].from` (the handle a signature resolves
+ * to, and the line beneath it) as "signature 1 handle".
+ */
 export function fieldLabel(field) {
   const f = String(field);
   if (f.startsWith('seal.')) return `seal ${fieldLabel(f.slice(5))}`;
-  const sig = f.match(/^signatures\[(\d+)\]\.(name|role)$/);
-  if (sig) return `signature ${Number(sig[1]) + 1} ${sig[2]}`;
+  const sig = f.match(/^signatures\[(\d+)\]\.(name|role|from)$/);
+  if (sig) return `signature ${Number(sig[1]) + 1} ${sig[2] === 'from' ? 'handle' : sig[2]}`;
   return FIELD_LABELS[f] || f;
 }
 

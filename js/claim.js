@@ -16,11 +16,20 @@
  * C3.2: redeem is never called on a session change. It is behind an explicit
  * button press, so a screenshot of a claim URL opened on somebody else's
  * browser cannot quietly burn a seat.
+ *
+ * V5 (design round 2): a successful claim reads the minted award back and
+ * swaps the whole offer for js/reveal.js's reveal, the badge drawn large with
+ * its real strip, then Pin, Share and Download. The text card it replaced is
+ * kept as the fallback for the case where the read-back fails: a claim that
+ * went through is never reported as anything less because a second query did
+ * not come back.
  */
 import { framed } from './frame.js';
 import { convex, api } from './convex.js';
 import { renderSvg, ensureFonts } from './insignia/render.js';
 import { NeoAuth } from './neorgon-auth.js';
+import { prefersReducedMotion } from './neorgon-dom.js';
+import { claimReveal } from './reveal.js';
 import { el, humanMs, stamp } from './utils.js';
 
 const TOKEN_RE = /^[0-9abcdefghjkmnpqrstvwxyz]{22}$/;      // C4.3
@@ -234,6 +243,7 @@ function outcomeNode(result, preview) {
   const out = el('div');
 
   if (result && result.ok) {
+    // The fallback when the reveal cannot draw: the claim still went through.
     const box = card('Claimed', 'It is in your wallet now.', 'good');
     box.appendChild(linkRow(`badge.html?id=${encodeURIComponent(result.awardPublicId)}`, 'See the badge'));
     box.appendChild(linkRow('index.html', 'Open your wallet'));
@@ -270,6 +280,38 @@ function outcomeNode(result, preview) {
   return out;
 }
 
+/**
+ * V5. The badge the server just minted, drawn large where the offer was.
+ *
+ * `awards:byPublicId` is the anonymous read every verify page makes, so the
+ * badge shown here is the badge a stranger will see, real strip included. If
+ * that read fails or the reveal throws, the text card stands in: the claim is
+ * settled either way and the page says so either way.
+ */
+async function revealClaimed(result, outcome, preview) {
+  let award = null;
+  try {
+    award = await convex.query(api.awards.byPublicId, { publicId: result.awardPublicId });
+  } catch (err) {
+    console.error('Sash: the claimed badge could not be read back', err);
+  }
+  if (!award || !award.design) {
+    outcome.replaceChildren(outcomeNode(result, preview));
+    return;
+  }
+  let section = null;
+  try {
+    section = claimReveal(award);
+  } catch (err) {
+    console.error('Sash: the reveal could not be drawn', err);
+    outcome.replaceChildren(outcomeNode(result, preview));
+    return;
+  }
+  stage.replaceChildren(section);
+  if (award.name) document.title = `Sash | ${award.name} is yours`;
+  section.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+}
+
 /** Redeems once. Returns true when a second press could still change the answer. */
 async function redeem(button, outcome, preview) {
   button.disabled = true;
@@ -286,7 +328,8 @@ async function redeem(button, outcome, preview) {
     button.disabled = false;
     return true;
   }
-  outcome.replaceChildren(outcomeNode(result, preview));
+  if (result && result.ok) await revealClaimed(result, outcome, preview);
+  else outcome.replaceChildren(outcomeNode(result, preview));
 
   // Only three outcomes can change if the button is pressed again: the rate
   // limit lifts, a handle gets picked, or the visitor signs in as the account

@@ -12,8 +12,17 @@
  *
  * `svgEl` lives in this file because patterns.js is the kit's leaf module: every
  * other drawing module imports it, and putting the factory in render.js would
- * make the graph circular.
+ * make the graph circular. The one import below is pure geometry with no
+ * import of its own, so the leaf stays a leaf.
+ *
+ * Design round 2 (pattern-density) added `sunburst`, `halftone` and `hatch`
+ * to the builders, `fadeMask` (C1.1 `pattern.fade`, C1.2 `background.fade`)
+ * and `guillocheLayers`, the certificate's guilloche drawn once at page size
+ * from `patterns-dense.js`. The eleven builders that shipped before it emit
+ * the same bytes they did: `tests/insignia-patterns.test.mjs` holds a hash of
+ * each and goes red on a changed one.
  */
+import { denseLayers, DENSE_STROKE } from './patterns-dense.js';
 
 export const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -59,6 +68,11 @@ const clampScale = (s) => {
   return Number.isFinite(v) && v >= 0.25 && v <= 4 ? v : 1;
 };
 
+const clampOpacity = (o) => (Number.isFinite(Number(o)) ? Math.min(1, Math.max(0, Number(o))) : 0.15);
+
+/** A field side for the centre-aware builders: the caller's page, or the 512 tile. */
+const fieldSide = (v) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : FIELD);
+
 /* ── metals (C7.9) ─────────────────────────────────────────────────────────── */
 
 const METAL_STOPS = {
@@ -87,20 +101,24 @@ export function metalGradient(metal, id) {
  * A `<pattern>` element for `kind`, or null when the kind draws nothing
  * (`none`, `plain`, or an id this kit does not know).
  *
- * Fill any shape with `fill="url(#<id>)"` to apply it.
+ * Fill any shape with `fill="url(#<id>)"` to apply it. `w` and `h` are the
+ * field the fill covers; the builders that grow from a centre (`sunburst`,
+ * `halftone`) make one tile of that size so a page shows one centre and no
+ * seam, and every other builder ignores them. Absent, the field is the 512
+ * badge tile, which is what a badge passes by not passing anything.
  */
-export function patternDefs(kind, { color = '#ffffff', opacity = 0.15, scale = 1, id } = {}) {
+export function patternDefs(kind, { color = '#ffffff', opacity = 0.15, scale = 1, id, w, h } = {}) {
   const build = BUILDERS[kind];
   if (!build || !id) return null;
   const s = clampScale(scale);
-  const o = Number.isFinite(Number(opacity)) ? Math.min(1, Math.max(0, Number(opacity))) : 0.15;
-  return build({ color, opacity: o, scale: s, id });
+  const o = clampOpacity(opacity);
+  return build({ color, opacity: o, scale: s, id, w: fieldSide(w), h: fieldSide(h) });
 }
 
 /** Every pattern id this module draws, for a picker that wants to skip the empties. */
 export const DRAWN_PATTERNS = Object.freeze([
   'stripes', 'dots', 'rays', 'guilloche', 'hexgrid', 'circuit', 'chevrons', 'noise',
-  'topo', 'mesh', 'tiles',
+  'topo', 'mesh', 'tiles', 'sunburst', 'halftone', 'hatch',
 ]);
 
 const tile = (id, w, h, children, extra = {}) => svgEl('pattern', {
@@ -268,4 +286,137 @@ const BUILDERS = {
       box(w / 4 + 1, h / 2 + 1, w / 2 - 2, h / 2 - 2),
     ]);
   },
+
+  /* ── round 2 ─────────────────────────────────────────────────────────────── */
+
+  // Graduated rays: alternate wedges from the field's centre, full strength
+  // there and gone by the corners. One tile the size of the field, so a page
+  // has one sun. The gradient sits inside the pattern, which sits in `defs`,
+  // so the element is self-contained; its id derives from the pattern's.
+  sunburst: ({ color, opacity, scale, id, w, h }) => {
+    const cx = w / 2;
+    const cy = h / 2;
+    const reach = Math.hypot(cx, cy);
+    const count = 2 * Math.max(4, Math.round(18 / scale));
+    const step = (Math.PI * 2) / count;
+    const parts = [];
+    for (let i = 0; i < count; i += 2) {
+      const a0 = i * step - Math.PI / 2 - step / 2;    // a ray sits on twelve o'clock
+      const a1 = a0 + step;
+      parts.push(`M${n(cx)} ${n(cy)} L${n(cx + reach * Math.cos(a0))} ${n(cy + reach * Math.sin(a0))} `
+        + `L${n(cx + reach * Math.cos(a1))} ${n(cy + reach * Math.sin(a1))} Z`);
+    }
+    const gid = `${id}-g`;
+    return tile(id, w, h, [
+      svgEl('radialGradient', { id: gid, cx: n(cx), cy: n(cy), r: n(reach), gradientUnits: 'userSpaceOnUse' }, [
+        svgEl('stop', { offset: '0', 'stop-color': color, 'stop-opacity': n(opacity) }),
+        svgEl('stop', { offset: '1', 'stop-color': color, 'stop-opacity': '0' }),
+      ]),
+      svgEl('path', { d: parts.join(' '), fill: `url(#${gid})` }),
+    ]);
+  },
+
+  // Dots on a grid whose radius grows with the distance from the field's
+  // centre: light in the middle, weight at the rim. One tile the size of the
+  // field. Each dot is a zero-length subpath with a round cap, bucketed by
+  // radius so a page of 3,500 dots is one path per radius rather than 3,500
+  // circles (about a third of the bytes; the three engines draw both alike).
+  halftone: ({ color, opacity, scale, id, w, h }) => {
+    const cell = 24 * scale;
+    const cx = w / 2;
+    const cy = h / 2;
+    const half = Math.min(cx, cy);
+    const cols = Math.ceil(w / cell);
+    const rows = Math.ceil(h / cell);
+    const buckets = new Map();
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        const x = (i + 0.5) * cell;
+        const y = (j + 0.5) * cell;
+        const t = Math.min(1.5, Math.hypot(x - cx, y - cy) / half);
+        const r = n(Math.round((1 + 3 * t) * scale * 5) / 5);    // 0.2-unit buckets
+        if (!buckets.has(r)) buckets.set(r, []);
+        buckets.get(r).push(`M${n(x)} ${n(y)}h0`);
+      }
+    }
+    const parts = [];
+    for (const [r, dots] of buckets) {
+      parts.push(svgEl('path', {
+        d: dots.join(''), fill: 'none', stroke: color, 'stroke-width': n(r * 2),
+        'stroke-opacity': n(opacity), 'stroke-linecap': 'round',
+      }));
+    }
+    return tile(id, w, h, parts);
+  },
+
+  // Two sets of engraving lines every 9 units: one at 30 degrees, one at 120
+  // at half the weight. A square tile of one horizontal and one vertical line,
+  // turned, so both sets run unbroken across tile edges.
+  hatch: ({ color, opacity, scale, id }) => {
+    const s = 9 * scale;
+    return tile(id, s, s, [
+      stroke(`M0 ${n(s / 2)} H${n(s)}`, color, 0.8, opacity, 'butt'),
+      stroke(`M${n(s / 2)} 0 V${n(s)}`, color, 0.8, opacity / 2, 'butt'),
+    ], { patternTransform: 'rotate(30)' });
+  },
 };
+
+/* ── round 2: the fade and the page-size guilloche ─────────────────────────── */
+
+/**
+ * A radial fade of a pattern toward a point, as a `<mask>` (C1.1
+ * `pattern.fade`, C1.2 `background.fade`). Luminance `1 - fade` at (cx, cy),
+ * `1 - 0.8 fade` at 42 percent of the way out, white at the edge: at 1 the
+ * middle is clear ground and the rim is untouched. The gradient reads its
+ * geometry from the rect's own box, so the fade is a circle on the badge and
+ * the page's own ellipse on a certificate, with no transform for an engine to
+ * disagree on; the rect is centred on the point and wide enough to cover the
+ * field, and doubles as the mask's region. The gradient lives inside the
+ * mask, so the caller's one `defs.appendChild` places both.
+ *
+ * Returns null when there is nothing to draw (fade 0, or no id), so a default
+ * document carries no mask at all and serialises to the bytes it did.
+ */
+export function fadeMask({ w = FIELD, h = FIELD, cx = w / 2, cy = h / 2, fade = 0, id } = {}) {
+  const f = Number(fade);
+  if (!id || !(f > 0)) return null;
+  const k = Math.min(1, f);
+  const rx = Math.max(cx, w - cx);
+  const ry = Math.max(cy, h - cy);
+  const grey = (lum) => {
+    const v = Math.round(255 * lum).toString(16).padStart(2, '0');
+    return `#${v}${v}${v}`;
+  };
+  const gid = `${id}-g`;
+  const box = { x: n(cx - rx), y: n(cy - ry), width: n(rx * 2), height: n(ry * 2) };
+  return svgEl('mask', { id, maskUnits: 'userSpaceOnUse', ...box }, [
+    svgEl('radialGradient', { id: gid, cx: '0.5', cy: '0.5', r: '0.5' }, [
+      svgEl('stop', { offset: '0', 'stop-color': grey(1 - k) }),
+      svgEl('stop', { offset: '0.42', 'stop-color': grey(1 - 0.8 * k) }),
+      svgEl('stop', { offset: '1', 'stop-color': '#ffffff' }),
+    ]),
+    svgEl('rect', { ...box, fill: `url(#${gid})` }),
+  ]);
+}
+
+/**
+ * The certificate's guilloche drawn once at page size: a `<g>` of three
+ * stroked layers from `patterns-dense.js`, centred on the page, reaching its
+ * corners, with no seam and no tile. Self-contained (no def, nothing to
+ * reference), for the caller to append in place of a pattern fill and to mask
+ * through `fadeMask` like any other; `opacity` is the strongest layer's, as
+ * it is for every other kind. Null when there is no id or no page, and the
+ * caller keeps the `<pattern>` tile.
+ */
+export function guillocheLayers({ w, h, color = '#ffffff', opacity = 0.15, scale = 1, id } = {}) {
+  if (!id || !(Number(w) > 0) || !(Number(h) > 0)) return null;
+  const o = clampOpacity(opacity);
+  const g = svgEl('g', {
+    id, fill: 'none', stroke: color, 'stroke-width': n(DENSE_STROKE),
+    'stroke-linecap': 'butt', 'shape-rendering': 'geometricPrecision',
+  });
+  for (const layer of denseLayers({ w: Number(w), h: Number(h), scale: clampScale(scale) })) {
+    g.appendChild(svgEl('path', { d: layer.d, 'stroke-opacity': n(o * layer.weight) }));
+  }
+  return g;
+}

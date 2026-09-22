@@ -4,10 +4,16 @@
  * DESIGN.md section 6.2 gap 6, CONTRACTS.md C2.10 and C7.
  *
  * The C7 enum lists are declared twice on purpose: once in
- * packages/neorgon-ui/insignia/schema.js, which the browser uses, and once in
+ * packages/neorgon-ui/insignia/enums.js, which the browser uses (schema.js
+ * re-exports it; the lists moved there in design round 2), and once in
  * projects/sash-site/convex/lib/design.ts, because the Convex runtime cannot
  * import packages/. A client-side validator is advice and a server-side one is
  * a control, so both have to exist. This asserts they say the same thing.
+ *
+ * Two directions. The frozen ENUMS list below names every list that must
+ * exist in both files, and every flat array exported by enums.js is then
+ * checked against design.ts as well, so a list added to the kit and not to
+ * this file is still compared rather than silently skipped.
  *
  * Exit codes, following the sync scripts' own convention:
  *   0  the two files agree
@@ -24,7 +30,7 @@ import { dirname, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SERVER = resolve(here, "../lib/design.ts");
-const KIT = resolve(here, "../../../../packages/neorgon-ui/insignia/schema.js");
+const KIT = resolve(here, "../../../../packages/neorgon-ui/insignia/enums.js");
 
 /** The C7 lists that must be identical in both files, by export name. */
 const ENUMS = [
@@ -33,6 +39,9 @@ const ENUMS = [
   "PATTERN_KINDS", "PIP_STYLES", "FONT_ROLES", "CERT_BACKGROUNDS", "CERT_FRAMES",
   "AWARD_SOURCES", "AWARD_STATUSES", "IMPORT_PROVIDERS", "IMPORT_DIALECTS",
   "EXPORT_FORMATS", "WALLET_GROUPS", "CENTRE_KINDS", "PROVENANCE_MODES",
+  // Design round 2, C7.23 to C7.31.
+  "FINISH_KINDS", "CENTRE_STYLES", "CENTRE_FITS", "CENTRE_MASKS", "CENTRE_PLATES",
+  "CENTRE_TONES", "CERT_LATENTS", "SIGNATURE_SOURCES", "SERIAL_STYLES",
 ];
 
 /**
@@ -61,7 +70,13 @@ if (!existsSync(SERVER)) {
 const kitSrc = readFileSync(KIT, "utf8");
 const serverSrc = readFileSync(SERVER, "utf8");
 
+// Every flat array the kit exports, so the frozen list above cannot fall behind
+// the file it reads: a name in the kit and not in ENUMS is a failure, not a skip.
+const kitNames = [...kitSrc.matchAll(/^export const ([A-Z_]+)\s*=\s*\[/gm)].map((m) => m[1]);
 let failures = 0;
+for (const name of kitNames) {
+  if (!ENUMS.includes(name)) { console.error(`UNLISTED in this test: ${name} is exported by enums.js`); failures++; }
+}
 for (const name of ENUMS) {
   const kit = extract(kitSrc, name);
   const server = extract(serverSrc, name);
@@ -77,7 +92,9 @@ for (const name of ENUMS) {
   }
 }
 
-const kitVersion = kitSrc.match(/export const SCHEMA_VERSION\s*=\s*(\d+)/)?.[1];
+// SCHEMA_VERSION stays in schema.js: it is a number, not a list.
+const SCHEMA = resolve(here, "../../../../packages/neorgon-ui/insignia/schema.js");
+const kitVersion = readFileSync(SCHEMA, "utf8").match(/export const SCHEMA_VERSION\s*=\s*(\d+)/)?.[1];
 const serverVersion = serverSrc.match(/export const SCHEMA_VERSION\s*=\s*(\d+)/)?.[1];
 if (kitVersion !== serverVersion) {
   console.error(`DRIFT  SCHEMA_VERSION: kit ${kitVersion}, convex ${serverVersion}`);
@@ -89,5 +106,5 @@ if (failures) {
   process.exit(1);
 }
 console.log(`enums.test: ${ENUMS.length} enum lists and SCHEMA_VERSION agree between`);
-console.log("  packages/neorgon-ui/insignia/schema.js");
+console.log("  packages/neorgon-ui/insignia/enums.js");
 console.log("  projects/sash-site/convex/lib/design.ts");

@@ -50,7 +50,7 @@ export const BADGE_PRESETS = [
   {
     id: 'energon-hex',
     name: 'Energon Hex',
-    note: 'The fleet mark, violet and gold. The default a new badge starts from.',
+    note: 'The fleet mark, violet and gold. The default a new badge starts from. The year rides the ribbon so nothing sits between the top arc and the glyph.',
     design: badge({
       palette: { base: '#7c3aed', accent: '#f5d67b', ink: '#0b1020', metal: 'none' },
       shape: 'hexagon',
@@ -60,12 +60,16 @@ export const BADGE_PRESETS = [
       ],
       pattern: { kind: 'hexgrid', color: '#ffffff', opacity: 0.14, scale: 1 },
       arcs: {
-        top: { text: 'RUBBER DUCK', font: 'display', size: 40, tracking: 4, color: '#ffffff' },
-        bottom: { text: 'WHISPERER', font: 'display', size: 30, tracking: 6, color: '#ffffff' },
+        // 34 with tracking 3 clears both shoulders of the hexagon; 40 with 4 sat on them.
+        top: { text: 'RUBBER DUCK', font: 'display', size: 34, tracking: 3, color: '#ffffff' },
+        // Measured to clear the ribbon band below it: arcUnderRibbon is 0 up to
+        // a drawn length of about 160 units in the serif face, and 22 with
+        // tracking 1 draws 144.
+        bottom: { text: 'WHISPERER', font: 'display', size: 22, tracking: 1, color: '#ffffff' },
       },
       centre: { kind: 'glyph', glyph: 'sparkles', color: '#ffffff', scale: 1, dy: -6 },
-      ribbon: null,
-      mark: { edition: '', year: 2026 },
+      ribbon: { text: '2026', color: '#f5d67b', textColor: '#0b1020', font: 'display', size: 24 },
+      mark: { edition: '', year: null },
     }),
   },
   {
@@ -100,7 +104,8 @@ export const BADGE_PRESETS = [
       pattern: { kind: 'circuit', color: '#29ff9c', opacity: 0.18, scale: 1 },
       arcs: {
         top: { text: 'ROOT CAUSE', font: 'mono', size: 32, tracking: 2, color: '#d8ffe9' },
-        bottom: { text: 'FOUND', font: 'mono', size: 26, tracking: 6, color: '#29ff9c' },
+        // 22, not 26: at 26 the line cleared the ribbon in the mono face and not in the serif a pairing swaps in.
+        bottom: { text: 'FOUND', font: 'mono', size: 22, tracking: 6, color: '#29ff9c' },
       },
       centre: { kind: 'glyph', glyph: 'bot', color: '#29ff9c', scale: 1, dy: -6 },
       ribbon: { text: 'exit 0', color: '#29ff9c', textColor: '#04120a', font: 'mono', size: 22 },
@@ -209,17 +214,19 @@ export const BADGE_PRESETS = [
   {
     id: 'ribbon-award',
     name: 'Ribbon Award',
-    note: 'The scalloped disc with tails. The tails take the foot, so no ribbon and no bottom arc.',
+    note: 'The scalloped disc with tails, claret and gold. The words ride the outer band, a beaded ring sits inside them around the trophy, and the tails take the foot, so no ribbon and no bottom arc.',
     design: badge({
       palette: { base: '#7a0f22', accent: '#f5d67b', ink: '#2b0209', metal: 'none' },
       shape: 'ribbon-rosette',
-      rings: [{ style: 'beaded', width: 6, color: '#f5d67b', inset: 16 }],
+      // Inset 56 puts the ring inside the arc rather than through it: the disc is
+      // scalloped, so a ring near its edge crosses the words at every valley.
+      rings: [{ style: 'beaded', width: 6, color: '#f5d67b', inset: 56 }],
       pattern: { kind: 'rays', color: '#f5d67b', opacity: 0.14, scale: 1 },
       arcs: {
         top: { text: 'FIRST PLACE', font: 'display', size: 30, tracking: 3, color: '#ffe9c9' },
         bottom: null,
       },
-      centre: { kind: 'glyph', glyph: 'trophy', color: '#f5d67b', scale: 0.8, dy: -40 },
+      centre: { kind: 'glyph', glyph: 'trophy', color: '#f5d67b', scale: 1, dy: 0 },
       ribbon: null,
       mark: { edition: '', year: 2026 },
     }),
@@ -227,18 +234,19 @@ export const BADGE_PRESETS = [
   {
     id: 'steel-drop',
     name: 'Steel Drop',
-    note: 'The silver gradient, a hex ground and a fixed-width ribbon of one measurement.',
+    note: 'The silver gradient, a hex ground, one word on a slab ribbon and the tolerance as the edition mark. No bottom arc: the ribbon takes the foot.',
     design: badge({
       palette: { base: '#8a9099', accent: '#1a1d21', ink: '#1a1d21', metal: 'silver' },
       shape: 'drop',
       rings: [{ style: 'solid', width: 8, color: '#1a1d21', inset: 12 }],
       pattern: { kind: 'hexgrid', color: '#ffffff', opacity: 0.1, scale: 1.2 },
-      arcs: {
-        top: null,
-        bottom: { text: 'MACHINED', font: 'slab', size: 22, tracking: 2, color: '#1a1d21' },
-      },
+      arcs: { top: null, bottom: null },
       centre: { kind: 'glyph', glyph: 'wrench', color: '#1a1d21', scale: 1, dy: 14 },
-      ribbon: { text: 'tolerance 0.01', color: '#1a1d21', textColor: '#d9dde1', font: 'mono', size: 18 },
+      ribbon: { text: 'MACHINED', color: '#1a1d21', textColor: '#d9dde1', font: 'slab', size: 22 },
+      // The mark sits at y 118, where the drop is 116 units wide at the cap line:
+      // "tolerance 0.01" draws 148 wide there and left the neck on both sides, so
+      // the abbreviation, at 85, is the longest form that stays on the drop.
+      mark: { edition: 'tol. 0.01', year: null },
     }),
   },
   {

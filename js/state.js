@@ -24,6 +24,14 @@ export const state = {
 
   group: 'all',             // C7.22, the visible filter
   showHidden: false,
+  // V5. The newest issuedAt this browser had seen at the end of its last
+  // visit, as an ISO string; empty on the first. Per viewer, per browser, and
+  // a view preference like showHidden: it says when a wall was last looked
+  // at, nothing about who looked. `freshIds` is what the current visit found
+  // newer than it, settled once per load by wallet.js and null until then.
+  lastSeenAt: '',
+  freshIds: null,
+  freshRevealed: false,     // the strip's reveal has run this visit; a repaint does not replay it
   busy: false,
 };
 
@@ -34,12 +42,16 @@ export function loadPrefs() {
     if (!raw) return;
     const saved = JSON.parse(raw);
     if (typeof saved.showHidden === 'boolean') state.showHidden = saved.showHidden;
+    if (typeof saved.lastSeenAt === 'string') state.lastSeenAt = saved.lastSeenAt;
   } catch { /* ignore corrupted preferences */ }
 }
 
 export function savePrefs() {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ showHidden: state.showHidden }));
+    localStorage.setItem(PREFS_KEY, JSON.stringify({
+      showHidden: state.showHidden,
+      lastSeenAt: state.lastSeenAt,
+    }));
   } catch { /* quota exceeded or private browsing */ }
 }
 
