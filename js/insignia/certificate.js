@@ -34,6 +34,8 @@ import { formatDate, handleText } from './provenance.js';
 import { drawFrame, drawBand, bandRuns } from './cert-band.js';
 import { drawSecurity, securityRuns } from './security.js';
 import { qrMatrix, qrNode } from './qr.js';
+import { fitText } from './text-fit.js';
+import { FONT_EXTENTS } from './data/font-metrics.js';
 
 export { formatDate, qrMatrix, qrNode };
 
@@ -110,16 +112,33 @@ export function layoutText(d, prov) {
   const t = d.text;
   const award = prov.mode === 'award';
   const items = [];
+  const bounds = {};
   // `key` names the C1.2 text slot, so a run reports the field it came from.
   // Provenance strings arrive unnormalised, so `xmlSafe` runs here for all of them.
   const put = (key, value, y) => {
     const spec = t[key];
     const text = xmlSafe(value === null || value === undefined ? '' : value);
     if (!text) return;
-    items.push({
-      field: `text.${key}`, value: text, role: spec.font, size: spec.size, color: spec.color,
-      x: w / 2, y, anchor: 'middle',
-    });
+    const heights = { eyebrow: 0.045, title: 0.09, holderLabel: 0.035,
+      holder: 0.085, body: 0.054, issuerLine: 0.03, dateLabel: 0.03 };
+    const fitted = fitText(text, { role: spec.font, size: spec.size,
+      width: w - Math.max(d.frame.inset + 90, w * 0.12) * 2,
+      height: h * heights[key], maxLines: key === 'body' ? 2 : 1 });
+    const extent = FONT_EXTENTS[spec.font] || FONT_EXTENTS.sans;
+    // A script name has deep descenders. Wrap the body below its actual font
+    // box, then let the issuer and date follow, instead of colliding with it.
+    const previous = key === 'body' ? bounds.holder
+      : key === 'issuerLine' ? bounds.body || bounds.holder
+        : key === 'dateLabel' ? bounds.issuerLine || bounds.body || bounds.holder : null;
+    if (previous) {
+      const top = y - (fitted.lines.length - 1) * fitted.leading - extent.ascent * fitted.size;
+      y += Math.max(0, previous.bottom + h * 0.012 - top);
+    }
+    bounds[key] = { bottom: y + extent.descent * fitted.size };
+    fitted.lines.forEach((line, i) => items.push({
+      field: `text.${key}`, value: line, role: spec.font, size: fitted.size, color: spec.color,
+      x: w / 2, y: y - (fitted.lines.length - 1 - i) * fitted.leading, anchor: 'middle',
+    }));
   };
 
   put('eyebrow', t.eyebrow.value, h * 0.20);

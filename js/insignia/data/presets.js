@@ -18,6 +18,7 @@ import { normalizeDesign, SHAPE_IDS, PATTERN_KINDS, RING_STYLES, PIP_STYLES } fr
 import { GLYPH_LIST } from '../glyphs.js';
 import { badge, BADGE_PRESETS } from './badges.js';
 import { CERTIFICATE_PRESETS } from './certificates.js';
+import { STUDIO_BADGES, STUDIO_CERTIFICATES } from './studio-presets.js';
 
 const certificate = (d) => normalizeDesign({ ...d, schemaVersion: 1, kind: 'certificate' });
 
@@ -25,12 +26,13 @@ const certificate = (d) => normalizeDesign({ ...d, schemaVersion: 1, kind: 'cert
 
 /** Every preset, badges first, then certificates. `{ id, name, kind, design }`. */
 export const PRESETS = [
-  ...BADGE_PRESETS.map((p) => ({ ...p, kind: 'badge' })),
-  ...CERTIFICATE_PRESETS.map((p) => ({ ...p, kind: 'certificate' })),
-];
+  BADGE_PRESETS[0], ...STUDIO_BADGES, ...BADGE_PRESETS.slice(1),
+].map((p) => ({ ...p, kind: 'badge' })).concat(
+  [...STUDIO_CERTIFICATES, ...CERTIFICATE_PRESETS].map((p) => ({ ...p, kind: 'certificate' })),
+);
 
 /** The preset a new document of each kind starts from. C12 DO #7 for the badge. */
-export const DEFAULT_PRESET = { badge: 'energon-hex', certificate: 'violet-signal' };
+export const DEFAULT_PRESET = { badge: 'energon-hex', certificate: 'ivory-honours' };
 
 /** Presets of one kind, in catalogue order. */
 export function presetsFor(kind) {
@@ -96,7 +98,7 @@ const take = (list, pick) => list[Math.min(list.length - 1, Math.max(0, Math.flo
  */
 export function randomDesign(kind = 'badge', pick = Math.random) {
   if (kind === 'certificate') {
-    const source = take(CERTIFICATE_PRESETS, pick).design;
+    const source = take(presetsFor('certificate'), pick).design;
     return certificate({
       ...JSON.parse(JSON.stringify(source)),
       background: { ...source.background, kind: take(RANDOM_POOLS.certBackgrounds, pick) },
@@ -125,4 +127,3 @@ export function randomDesign(kind = 'badge', pick = Math.random) {
     pips: { count: Math.floor(pick() * 6), max: 5, style: take(RANDOM_POOLS.pipStyles, pick), color: p.accent },
   });
 }
-

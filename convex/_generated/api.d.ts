@@ -23,6 +23,7 @@ import type * as lib_admin from "../lib/admin.js";
 import type * as lib_awards from "../lib/awards.js";
 import type * as lib_blocklist from "../lib/blocklist.js";
 import type * as lib_design from "../lib/design.js";
+import type * as lib_fetchGuard from "../lib/fetchGuard.js";
 import type * as lib_grants from "../lib/grants.js";
 import type * as lib_handles from "../lib/handles.js";
 import type * as lib_importMeta from "../lib/importMeta.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   "lib/awards": typeof lib_awards;
   "lib/blocklist": typeof lib_blocklist;
   "lib/design": typeof lib_design;
+  "lib/fetchGuard": typeof lib_fetchGuard;
   "lib/grants": typeof lib_grants;
   "lib/handles": typeof lib_handles;
   "lib/importMeta": typeof lib_importMeta;

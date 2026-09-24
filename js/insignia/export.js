@@ -431,7 +431,7 @@ export async function printRoot(design, provenance, { pageSize = 'A4', rootId = 
     document.head.appendChild(style);
   }
   style.textContent = `@media print{@page{size:${pageSize} ${orientation};margin:0}`
-    + `#${rootId} svg{width:${mmW}mm;height:${mmH}mm}}`;
+    + `#${rootId}>svg{width:${mmW}mm;height:${mmH}mm}}`;
 
   root.innerHTML = '';
   ensureFonts();   // the print path draws from the page's own font stack, not from an inlined subset

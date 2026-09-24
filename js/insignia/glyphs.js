@@ -33,11 +33,13 @@
  * the renderer builds real nodes with `createElementNS` and never parses HTML.
  */
 import { svgEl } from './patterns.js';
+import { ORNAMENTS } from './data/ornaments.js';
 
 /** Every glyph is drawn on Lucide's 24 by 24 field with a 2 unit stroke. */
 export const GLYPH_FIELD = 24;
 
 export const GLYPHS = {
+  ...ORNAMENTS,
   "book-open": [{ t: "path", d: "M12 5v16" }, { t: "path", d: "M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" }],
   "bot": [{ t: "path", d: "M12 8V4H8", nofill: true }, { t: "rect", height: "12", rx: "2", width: "16", x: "4", y: "8" }, { t: "path", d: "M2 14h2" }, { t: "path", d: "M20 14h2" }, { t: "path", d: "M15 13v2" }, { t: "path", d: "M9 13v2" }],
   "cat": [{ t: "path", d: "M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z" }, { t: "path", d: "M8 14v.5" }, { t: "path", d: "M16 14v.5" }, { t: "path", d: "M11.25 16.25h1.5L12 17l-.75-.75Z" }],
@@ -131,10 +133,11 @@ export function glyphProblems(registry = GLYPHS) {
 //
 // `nofill` is a registry-only flag: the part draws in the line copy and is
 // skipped by `glyphFillNode`. It never reaches the DOM.
-function build(parts, color) {
+function build(parts, color, strokeWidth = 2) {
   return parts.map((p) => {
     const { t, nofill, ...attrs } = p;
     if (attrs.fill === 'currentColor') attrs.fill = color;
+    if (attrs['stroke-width']) attrs['stroke-width'] = String(Number(attrs['stroke-width']) * strokeWidth / 2);
     return svgEl(t, attrs);
   });
 }
@@ -155,7 +158,7 @@ export function glyphNode(id, { color = '#ffffff', strokeWidth = 2 } = {}) {
     'stroke-width': String(strokeWidth),
     'stroke-linecap': 'round',
     'stroke-linejoin': 'round',
-  }, build(parts, color));
+  }, build(parts, color, strokeWidth));
 }
 
 /**
