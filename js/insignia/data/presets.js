@@ -4,8 +4,7 @@
  * C1's target is that a first badge looks like something in about thirty
  * seconds, which means the author picks a preset and edits the words. This file
  * is the entry point named in `data/README.md`; the designs themselves live in
- * `badges.js` and `certificates.js`, which is a split for the 500-line rule on
- * a module a browser loads, not a split with meaning.
+ * the original badge/certificate files and the themed studio collections.
  *
  *   PRESETS        every preset, `{ id, name, kind, design }`, badges first
  *   DEFAULT_PRESET the one a new document of each kind starts from
@@ -19,6 +18,7 @@ import { GLYPH_LIST } from '../glyphs.js';
 import { badge, BADGE_PRESETS } from './badges.js';
 import { CERTIFICATE_PRESETS } from './certificates.js';
 import { STUDIO_BADGES, STUDIO_CERTIFICATES } from './studio-presets.js';
+import { FUTURISTIC_BADGES, FUTURISTIC_CERTIFICATES } from './futuristic-presets.js';
 
 const certificate = (d) => normalizeDesign({ ...d, schemaVersion: 1, kind: 'certificate' });
 
@@ -26,9 +26,9 @@ const certificate = (d) => normalizeDesign({ ...d, schemaVersion: 1, kind: 'cert
 
 /** Every preset, badges first, then certificates. `{ id, name, kind, design }`. */
 export const PRESETS = [
-  BADGE_PRESETS[0], ...STUDIO_BADGES, ...BADGE_PRESETS.slice(1),
+  BADGE_PRESETS[0], ...FUTURISTIC_BADGES, ...STUDIO_BADGES, ...BADGE_PRESETS.slice(1),
 ].map((p) => ({ ...p, kind: 'badge' })).concat(
-  [...STUDIO_CERTIFICATES, ...CERTIFICATE_PRESETS].map((p) => ({ ...p, kind: 'certificate' })),
+  [...FUTURISTIC_CERTIFICATES, ...STUDIO_CERTIFICATES, ...CERTIFICATE_PRESETS].map((p) => ({ ...p, kind: 'certificate' })),
 );
 
 /** The preset a new document of each kind starts from. C12 DO #7 for the badge. */
