@@ -125,16 +125,10 @@
       </section>
 
       <!-- ── signed out ──────────────────────────────────────── -->
+      <!-- The header subtitle is the page's one positioning line, so the
+           signed-out view opens on its controls; its heading is for the outline. -->
       <section class="section" id="signedOut" hidden aria-labelledby="signedOutTitle">
-        <div class="section__titles">
-          <h2 class="section__title" id="signedOutTitle">A wallet for the badges you actually earned here</h2>
-          <p class="section__lead">
-            Sash keeps community badges and certificates on one page. Claim them from a link,
-            hide the ones you would rather not show, and put the rest in the order you want.
-            Every badge carries the handle that issued it and a link back to this site, so a
-            reader can always see where it came from.
-          </p>
-        </div>
+        <h2 class="sr-only" id="signedOutTitle">Your wallet</h2>
         <div class="toolbar">
           <button type="button" class="btn btn--primary" id="heroSigninBtn">Sign in to start</button>
           <a class="btn btn--ghost" href="policy.html">What these badges are</a>
